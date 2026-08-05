@@ -1,0 +1,33 @@
+# ── Maxfiy fayllar (HECH QACHON git ga qo'shilmasin!) ────────────────────────
+.env
+*.env
+.env.*
+
+# ── Python cache ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# ── Bot ma'lumotlar bazasi (server o'z bazasiga ega) ─────────────────────────
+data/warehouse.db
+data/warehouse.db-shm
+data/warehouse.db-wal
+
+# ── Yuklab olingan/yaratilgan fayllar ─────────────────────────────────────────
+data/exports/
+data/tmp/
+data/images/
+*.log
+sync.log
+odoo_sync/last_sync.txt
+
+# ── OS fayllar ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+
+# ── Venv ──────────────────────────────────────────────────────────────────────
+venv/
+env/
+.venv/

@@ -57,46 +57,18 @@ def _parse(raw):
             p = p.strip()
             if p.startswith("json"): p = p[4:].strip()
             if p.startswith("{"): raw = p; break
-
-    try:
-        result = json.loads(raw)
-    except Exception:
-        # JSON buzilgan bo'lsa xato bermay, xavfsiz lug'at qaytarish
-        return {
-            "name_keywords": [],
-            "category": None,
-            "format": None,
-            "thickness": None,
-            "color": None,
-            "description": raw[:100]
-        }
-
-    if not isinstance(result, dict):
-        result = {}
-
-    for key in ("name_keywords", "category", "color", "description"):
-        if key not in result:
-            result[key] = [] if key == "name_keywords" else None
-
-    if not isinstance(result.get("name_keywords"), list):
-        result["name_keywords"] = []
-
+    result = json.loads(raw)
+    for key in ("name_keywords","category","color","description"):
+        if key not in result: result[key] = [] if key=="name_keywords" else None
     return result
 
 def _gemini(key, path):
-    # Barqaror gemini-1.5-flash versiyasidan foydalanamiz
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
     r = _post(
-        url,
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}",
         {"contents":[{"parts":[{"text":PROMPT},{"inline_data":{"mime_type":_mime(path),"data":_b64(path)}}]}],
          "generationConfig":{"maxOutputTokens":600,"temperature":0.1}},
         {"Content-Type":"application/json"})
-    
-    try:
-        text_content = r["candidates"][0]["content"]["parts"][0]["text"]
-        return _parse(text_content)
-    except (KeyError, IndexError) as e:
-        raise ValueError(f"Gemini API javob formati xato: {r}")
+    return _parse(r["candidates"][0]["content"]["parts"][0]["text"])
 
 def _openai(key, path):
     r = _post("https://api.openai.com/v1/chat/completions",
@@ -107,9 +79,8 @@ def _openai(key, path):
     return _parse(r["choices"][0]["message"]["content"])
 
 def _anthropic(key, path):
-    # Mavjud bo'lgan model versiyasiga to'g'rilandi
     r = _post("https://api.anthropic.com/v1/messages",
-        {"model":"claude-3-haiku-20240307","max_tokens":600,"messages":[{"role":"user","content":[
+        {"model":"claude-haiku-4-5-20251001","max_tokens":600,"messages":[{"role":"user","content":[
             {"type":"image","source":{"type":"base64","media_type":_mime(path),"data":_b64(path)}},
             {"type":"text","text":PROMPT}]}]},
         {"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"})
@@ -133,7 +104,7 @@ def analyze_image(image_path: str, retries: int = 3) -> Dict[str, Any]:
             return result
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", errors="ignore")
-            logger.warning(f"HTTP {e.code} ({attempt}/{retries}): {body}")
+            logger.warning(f"HTTP {e.code} ({attempt}/{retries})")
             if e.code == 429:
                 wait = 15 * attempt
                 logger.info(f"Rate limit — {wait}s kutilmoqda...")
@@ -154,34 +125,23 @@ def search_by_analysis(analysis: Dict) -> List:
     def add(rows):
         for r in rows:
             if r["id"] not in seen: seen.add(r["id"]); results.append(r)
-            
     cat      = (analysis.get("category") or "").lower().strip()
     keywords = analysis.get("name_keywords") or []
     color    = analysis.get("color") or ""
     fmt      = analysis.get("format") or ""
     thick    = analysis.get("thickness") or ""
-
     for kw in keywords:
-        if len(kw.strip()) > 1:
+        if len(kw.strip())>1:
             rows = db.search_by_name(kw.strip())
-            if cat: rows = [r for r in rows if r.get("category") == cat]
+            if cat: rows=[r for r in rows if r["category"]==cat]
             add(rows)
-
-    if color and len(color) > 2:
+    if color and len(color)>2:
         rows = db.search_by_name(color)
-        if cat: rows = [r for r in rows if r.get("category") == cat]
+        if cat: rows=[r for r in rows if r["category"]==cat]
         add(rows)
-
-    if fmt:
-        fmt_clean = fmt.replace(" ", "").replace("x", "*").replace("х", "*")
-        add(db.search_by_format(fmt_clean))
-
-    if thick:
-        add(db.search_by_thickness(thick.replace(" ", "")))
-
-    if not results and cat:
-        add(db.get_products_by_category(cat))
-
+    if fmt:   add(db.search_by_format(fmt.replace(" ","").replace("x","*").replace("х","*")))
+    if thick: add(db.search_by_thickness(thick.replace(" ","")))
+    if not results and cat: add(db.get_products_by_category(cat))
     return results
 
 def build_detected_info(analysis: Dict) -> str:

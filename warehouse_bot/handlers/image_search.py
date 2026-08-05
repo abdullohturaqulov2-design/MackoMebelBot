@@ -16,7 +16,6 @@ router  = Router()
 logger  = logging.getLogger(__name__)
 TMP_DIR = os.path.join(DATA_DIR, "tmp")
 
-# Bu holatlarda boshqa handlerlar rasmni oladi
 BUSY_STATES = {
     PhotoStates.waiting_photo.state,
     ManualAddStates.waiting_image.state,
@@ -28,31 +27,26 @@ async def handle_image_search(message: Message, state: FSMContext, bot: Bot):
     uid           = message.from_user.id
     current_state = await state.get_state()
 
-    # Boshqa handler uchun mo'ljallangan holatlar — o'tkazib yuborish
     if current_state in BUSY_STATES:
         return
 
     lang = db.get_user_lang(uid)
 
-    # Til tanlanmagan bo'lsa
     if not db.user_has_language(uid):
         from keyboards.reply import language_keyboard
         await state.set_state(AdminStates.choosing_language)
         await message.answer(t("uz", "choose_language"), reply_markup=language_keyboard())
         return
 
-    # Holat yo'q bo'lsa — main_menu ga o'rnat
     if current_state is None:
         await state.set_state(AdminStates.main_menu)
 
-    # API kalit yo'q
     if not GEMINI_API_KEY:
         await message.answer(t(lang, "img_no_api"))
         return
 
     proc_msg = await message.answer(t(lang, "img_processing"))
 
-    # Rasmni yuklab olish
     photo     = message.photo[-1]
     file_info = await bot.get_file(photo.file_id)
     os.makedirs(TMP_DIR, exist_ok=True)
@@ -67,17 +61,28 @@ async def handle_image_search(message: Message, state: FSMContext, bot: Bot):
         logger.error(f"Rasm yuklab olish xatosi: {e}")
         return
 
-    # Gemini AI tahlil
     from utils.vision_search import analyze_image, search_by_analysis, build_detected_info
+    
+    # Gemini AI tahlil
     analysis = analyze_image(img_path)
-    try: os.remove(img_path)
-    except: pass
+
+    # Tahlildan keyin faylni xavfsiz o'chirish
+    if os.path.exists(img_path):
+        try: os.remove(img_path)
+        except: pass
+
     try: await proc_msg.delete()
     except: pass
 
+    # Agar tahlilda xatolik bo'lsa
     if "error" in analysis:
         err = analysis["error"]
-        await message.answer(t(lang, "img_no_api") if err == "no_api_key" else t(lang, "img_error"))
+        logger.error(f"AI Vision Search xatosi: {err}")
+        if err == "no_api_key":
+            await message.answer(t(lang, "img_no_api"))
+        else:
+            # Aniq xatoni ekranga chiqarish (diagnostika uchun)
+            await message.answer(f"⚠️ Rasm tahlilida xato yuz berdi:\n`{err}`")
         return
 
     rows     = search_by_analysis(analysis)

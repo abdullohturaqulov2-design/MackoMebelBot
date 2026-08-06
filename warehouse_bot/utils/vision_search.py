@@ -64,15 +64,15 @@ def _parse(raw):
 
 def _gemini(key, path):
     r = _post(
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}",
         {"contents":[{"parts":[{"text":PROMPT},{"inline_data":{"mime_type":_mime(path),"data":_b64(path)}}]}],
-         "generationConfig":{"maxOutputTokens":18000,"temperature":0.3}},
+         "generationConfig":{"maxOutputTokens":600,"temperature":0.1}},
         {"Content-Type":"application/json"})
     return _parse(r["candidates"][0]["content"]["parts"][0]["text"])
 
 def _openai(key, path):
     r = _post("https://api.openai.com/v1/chat/completions",
-        {"model":"gpt-4o","max_tokens":18000,"messages":[{"role":"user","content":[
+        {"model":"gpt-4o","max_tokens":600,"messages":[{"role":"user","content":[
             {"type":"image_url","image_url":{"url":f"data:{_mime(path)};base64,{_b64(path)}","detail":"high"}},
             {"type":"text","text":PROMPT}]}]},
         {"Content-Type":"application/json","Authorization":f"Bearer {key}"})
@@ -80,7 +80,7 @@ def _openai(key, path):
 
 def _anthropic(key, path):
     r = _post("https://api.anthropic.com/v1/messages",
-        {"model":"claude-haiku-4-5-20251001","max_tokens":18000,"messages":[{"role":"user","content":[
+        {"model":"claude-haiku-4-5-20251001","max_tokens":600,"messages":[{"role":"user","content":[
             {"type":"image","source":{"type":"base64","media_type":_mime(path),"data":_b64(path)}},
             {"type":"text","text":PROMPT}]}]},
         {"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"})
@@ -106,14 +106,11 @@ def analyze_image(image_path: str, retries: int = 3) -> Dict[str, Any]:
             body = e.read().decode("utf-8", errors="ignore")
             logger.warning(f"HTTP {e.code} ({attempt}/{retries})")
             if e.code == 429:
-                wait = 30 * attempt
+                wait = 15 * attempt
                 logger.info(f"Rate limit — {wait}s kutilmoqda...")
-                time.sleep(wait)
-                last_err = {"error": "rate_limit"}
-                continue
-            if e.code in (401, 403): 
-                return {"error": "auth_error"}
-            last_err = {"error": f"http_{e.code}"}
+                time.sleep(wait); last_err = {"error":"rate_limit"}; continue
+            if e.code in (401,403): return {"error":"auth_error"}
+            last_err = {"error":f"http_{e.code}"}
         except json.JSONDecodeError:
             last_err = {"error":"parse_error"}; logger.warning(f"JSON xato ({attempt}/{retries})")
         except Exception as e:

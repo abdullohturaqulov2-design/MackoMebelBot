@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 TEXTS = {
   "uz": {
+    "btn_get_excel": "📊 Excel olish",
+    "btn_macko_ai":  "🤖 Macko AI",
     "btn_scanner": "🔍 Skaner",
     "choose_language":"Tilni tanlang / Выберите язык / Choose language:",
     "language_set":"✅ Til o'zbekcha qilib tanlandi.",
@@ -176,6 +178,8 @@ TEXTS = {
     "admin_entry":"  👤 {name} | <code>{uid}</code> | {role}",
   },
   "ru": {
+    "btn_get_excel": "📊 Получить Excel",
+    "btn_macko_ai":  "🤖 Macko AI",
     "btn_scanner": "🔍 Сканер",
     "choose_language":"Tilni tanlang / Выберите язык / Choose language:",
     "language_set":"✅ Выбран русский язык.",
@@ -284,6 +288,8 @@ TEXTS = {
     "myid_response":"Ваш Telegram ID:\n<code>{uid}</code>","admin_entry":"  👤 {name} | <code>{uid}</code> | {role}",
   },
   "en": {
+    "btn_get_excel": "📊 Get Excel",
+    "btn_macko_ai":  "🤖 Macko AI", 
     "btn_scanner": "🔍 Scanner",
     "choose_language":"Tilni tanlang / Выберите язык / Choose language:",
     "language_set":"✅ English selected.",

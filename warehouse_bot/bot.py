@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 from aiohttp import web
+import json as _json
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -12,6 +13,7 @@ from aiogram.types import BotCommand
 from handlers import scanner
 from utils.qr_utils import init_qr_dir
 
+from handlers import excel_export
 from handlers import qr_handler
 from config import BOT_TOKEN
 from database.db import init_db
@@ -32,14 +34,81 @@ logging.basicConfig(
 async def handle(request):
     return web.Response(text="Bot is running and alive!")
 
+AI_SYSTEM = """Siz MackoMebelBot uchun Macko AI yordamchisisiz.
+Mebel, plita, akril, MDF, XDF, laminat, kromka haqida maslahat beradi.
+O'zbek, rus va ingliz tillarida gaplashadi. Qisqa va aniq javoblar beradi."""
+
+async def handle_ai_chat(request):
+    """Macko AI mini app uchun Gemini proxy."""
+    import urllib.request as _ur
+    try:
+        data = await request.json()
+        message  = data.get('message','')
+        history  = data.get('history',[])
+        images   = data.get('images',[])
+
+        key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY','')
+        if not key:
+            return web.json_response({'error':'GEMINI_API_KEY sozlanmagan'})
+
+        # Suhbat tarixi
+        contents = [{'role':'user','parts':[{'text':AI_SYSTEM}]},
+                    {'role':'model','parts':[{'text':'Tushunarli! Macko AI sifatida yordam beraman.'}]}]
+
+        for h in history[-10:]:
+            role = 'model' if h['role']=='model' else 'user'
+            contents.append({'role':role,'parts':[{'text':h['content']}]})
+
+        # Joriy xabar (rasm bilan)
+        parts = []
+        if message: parts.append({'text':message})
+        for img in images[:3]:
+            parts.append({'inline_data':{'mime_type':img.get('type','image/jpeg'),'data':img['data']}})
+        if not parts: parts.append({'text':'Salom'})
+        contents.append({'role':'user','parts':parts})
+
+        payload = _json.dumps({
+            'contents':contents,
+            'generationConfig':{'maxOutputTokens':2048,'temperature':0.7}
+        }).encode()
+
+        req = _ur.Request(
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key}',
+            data=payload, headers={'Content-Type':'application/json'}, method='POST')
+        with _ur.urlopen(req, timeout=30) as resp:
+            result = _json.loads(resp.read())
+
+        text = result['candidates'][0]['content']['parts'][0]['text']
+        return web.json_response({'response':text},
+            headers={'Access-Control-Allow-Origin':'*'})
+
+    except Exception as e:
+        return web.json_response({'error':str(e)},
+            headers={'Access-Control-Allow-Origin':'*'})
+
+async def handle_cors(request):
+    return web.Response(headers={
+        'Access-Control-Allow-Origin':'*',
+        'Access-Control-Allow-Methods':'POST,GET,OPTIONS',
+        'Access-Control-Allow-Headers':'Content-Type'
+    })
+
+async def handle_ping(request):
+    return web.Response(text="MackoMebelBot ishlayapti OK!")
+
 async def start_web_server():
     app = web.Application()
-    app.add_routes([web.get("/", handle)])
+    app.add_routes([
+        web.get("/",   handle_ping),
+        web.post("/ai/chat", handle_ai_chat),
+        web.options("/ai/chat", handle_cors),  # CORS
+    ])
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
+    logging.info(f"Web server: http://0.0.0.0:{port}")
 
 
 async def set_commands(bot: Bot):
@@ -88,6 +157,7 @@ async def main():
     dp.include_router(scanner.router)
     dp.include_router(lists.router)
     dp.include_router(photo_upload.router)
+    dp.include_router(excel_export.router)
     dp.include_router(history.router)
     dp.include_router(search.router)       # ← eng oxirda
 

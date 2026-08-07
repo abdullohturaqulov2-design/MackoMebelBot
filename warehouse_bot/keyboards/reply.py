@@ -9,20 +9,23 @@ def language_keyboard():
 
 
 def get_main_keyboard(lang: str, role: str) -> ReplyKeyboardMarkup:
-    btn_scanner = KeyboardButton(text=t(lang, "btn_scanner"))
+    btn_scanner   = KeyboardButton(text=t(lang, "btn_scanner"))
+    btn_macko_ai  = KeyboardButton(text=t(lang, "btn_macko_ai"))
     
     if role in ("admin", "superadmin"):
+        btn_excel = KeyboardButton(text=t(lang, "btn_get_excel"))
         return ReplyKeyboardMarkup(keyboard=[
             [KeyboardButton(text=t(lang, "btn_warehouse"))],
             [KeyboardButton(text=t(lang, "btn_add")),      KeyboardButton(text=t(lang, "btn_remove"))],
             [KeyboardButton(text=t(lang, "btn_stats")),    KeyboardButton(text=t(lang, "btn_movement"))],
             [KeyboardButton(text=t(lang, "btn_history")),  KeyboardButton(text=t(lang, "btn_settings"))],
-            [btn_scanner],
+            [btn_scanner, btn_macko_ai],
+            [btn_excel],
         ],resize_keyboard=True)
     return ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text=t(lang, "btn_warehouse"))],
         [KeyboardButton(text=t(lang, "btn_settings"))],
-        [btn_scanner],
+        [btn_scanner, btn_macko_ai],
     ], resize_keyboard=True)
 
 

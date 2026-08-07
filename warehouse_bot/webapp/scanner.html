@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>QR & Barcode Scanner</title>
+<title>QR Scanner</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
-<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f0f1a;color:#fff;font-family:-apple-system,sans-serif;
@@ -16,26 +15,12 @@ h2{font-size:16px;margin:8px 0 2px;color:#7eb3ff;text-align:center}
 .tabs{display:flex;gap:8px;margin-bottom:10px;width:100%;max-width:340px}
 .tab{flex:1;padding:8px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600}
 .tab.active{background:#7eb3ff;color:#000}.tab:not(.active){background:#1e1e3a;color:#aaa}
-#cam-view{width:100%;max-width:340px}
-.vwrap{position:relative;width:100%;aspect-ratio:1;border-radius:14px;overflow:hidden;background:#111}
-video{width:100%;height:100%;object-fit:cover}
-.frame{position:absolute;inset:24px;border:2.5px solid #7eb3ff;border-radius:10px;
-       box-shadow:0 0 0 9999px rgba(0,0,0,.5)}
-.c{position:absolute;width:20px;height:20px;border-color:#4fc3f7;border-style:solid}
-.tl{top:18px;left:18px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
-.tr{top:18px;right:18px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
-.bl{bottom:18px;left:18px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
-.br{bottom:18px;right:18px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
-.sl{position:absolute;left:24px;right:24px;height:2px;
-    background:linear-gradient(90deg,transparent,#4fc3f7,transparent);
-    animation:sc 1.8s linear infinite}
-@keyframes sc{0%{top:28px}100%{top:calc(100%-28px)}}
-#st{margin-top:8px;font-size:13px;color:#aaa;text-align:center;min-height:32px;padding:0 8px}
-.cbts{display:flex;gap:8px;margin-top:8px}
-.btn{flex:1;padding:9px;border-radius:10px;border:none;cursor:pointer;font-size:12px;font-weight:600}
-.bp{background:#7eb3ff;color:#000}.bs{background:#1e1e3a;color:#aaa}
+#reader{width:100%;max-width:340px;border-radius:14px;overflow:hidden}
+#reader video{border-radius:14px}
+#st{margin-top:8px;font-size:13px;color:#aaa;text-align:center;min-height:28px}
 #gal{width:100%;max-width:340px;display:none}
-.ua{border:2px dashed #7eb3ff;border-radius:14px;padding:28px 16px;text-align:center;cursor:pointer;background:#0d0d20}
+.ua{border:2px dashed #7eb3ff;border-radius:14px;padding:28px 16px;
+    text-align:center;cursor:pointer;background:#0d0d20}
 .ui{font-size:38px;margin-bottom:6px}
 .ut{font-size:13px;color:#aaa}.ut span{color:#7eb3ff;font-weight:600}
 #fi{display:none}
@@ -47,7 +32,6 @@ video{width:100%;height:100%;object-fit:cover}
 #succ{display:none;flex-direction:column;align-items:center;gap:12px;padding:20px}
 .chk{width:72px;height:72px;background:#27ae60;border-radius:50%;
      display:flex;align-items:center;justify-content:center;font-size:36px}
-canvas{display:none}
 </style>
 </head>
 <body>
@@ -55,24 +39,11 @@ canvas{display:none}
 <p class="sub">MackoMebelBot uchun mahsulot skaner</p>
 <div class="tabs">
   <button class="tab active" onclick="switchTab('cam')">📷 Kamera</button>
-  <button class="tab"        onclick="switchTab('gal')">🖼 Galereya</button>
+  <button class="tab" onclick="switchTab('gal')">🖼 Galereya</button>
 </div>
 
-<div id="cam-view">
-  <div class="vwrap">
-    <video id="video" playsinline muted></video>
-    <div class="frame">
-      <div class="c tl"></div><div class="c tr"></div>
-      <div class="c bl"></div><div class="c br"></div>
-      <div class="sl"></div>
-    </div>
-  </div>
-  <p id="st">Kamera yoqilmoqda...</p>
-  <div class="cbts">
-    <button class="btn bs" onclick="flipCam()">🔄 Kamera</button>
-    <button class="btn bs" id="tbtn" onclick="toggleTorch()">🔦 Yoq</button>
-  </div>
-</div>
+<div id="reader"></div>
+<p id="st">Kamera yoqilmoqda...</p>
 
 <div id="gal">
   <div class="ua" onclick="document.getElementById('fi').click()">
@@ -82,7 +53,7 @@ canvas{display:none}
   <input type="file" id="fi" accept="image/*">
   <div id="gp"><img id="pimg"></div>
   <p id="gs"></p>
-  <button class="bd" id="dbtn" onclick="decodeImg()">🔍 Skanerlash</button>
+  <button class="bd" id="dbtn">🔍 Skanerlash</button>
 </div>
 
 <div id="succ">
@@ -91,198 +62,104 @@ canvas{display:none}
   <p style="color:#aaa;font-size:12px;text-align:center">Bot javob berishini kuting...</p>
 </div>
 
-<canvas id="cv"></canvas>
-
 <script>
 const tg=window.Telegram.WebApp; tg.ready(); tg.expand();
-
-// Deep link
 const ps=new URLSearchParams(window.location.search);
 const ac=ps.get('code')||ps.get('qr');
-if(ac){setTimeout(()=>send(ac),300);}
+if(ac){setTimeout(()=>sendResult(ac),300);}
 
-let active=true, stream=null, facingMode='environment', torchOn=false, aid=null, zxr=null;
-const video=document.getElementById('video');
-const cv=document.getElementById('cv');
-const ctx2=cv.getContext('2d');
+let scanner=null, selFile=null;
 
-// ── Rasm qayta ishlash — QR ni ajratib olish ─────────────────────────────────
-function preprocessForQR(imageData){
-  // Kulrang + kontrast oshirish → qoʻyuq rangli QR ham topilsin
-  const d=imageData.data;
-  for(let i=0;i<d.length;i+=4){
-    const gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-    // Kontrast: 128 dan past → 0 (qora), yuqori → 255 (oq)
-    const v = gray<160 ? 0 : 255;
-    d[i]=d[i+1]=d[i+2]=v;
-  }
-  return imageData;
+function onScan(text){
+  stopScanner();
+  handleResult(text);
 }
 
-// ── KAMERA ───────────────────────────────────────────────────────────────────
-async function startCam(){
-  active=true;
-  if(aid){cancelAnimationFrame(aid);aid=null;}
-  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode,width:{ideal:1920},height:{ideal:1080}}
-    });
-    video.srcObject=stream;
-
-    // video.play() ni xato bo'lsa ham davom etish
-    try{await video.play();}catch(e){}
-
-    // Video tayyor bo'lishini kutish
-    video.addEventListener('loadedmetadata',()=>{
-      document.getElementById('st').textContent="QR yoki barkodni ramkaga to'g'irlang";
-      scanLoop();
-      startZx();
-    },{once:true});
-
-    // Agar loadedmetadata ketmasa backup
-    setTimeout(()=>{
-      if(active && video.readyState>=2){
-        document.getElementById('st').textContent="QR yoki barkodni ramkaga to'g'irlang";
-        if(!aid) scanLoop();
-      }
-    },1500);
-
-  }catch(e){
-    const msg=e.name==='NotAllowedError'||e.name==='PermissionDeniedError'
-      ? "❌ Kamera ruxsati berilmagan.\nTelegram sozlamalarida kameraga ruxsat bering."
-      : "❌ Kamera xato: "+e.message;
-    document.getElementById('st').textContent=msg;
-  }
+function startScanner(){
+  document.getElementById('reader').style.display='block';
+  document.getElementById('st').textContent="QR yoki barkodni ramkaga to'g'irlang";
+  scanner=new Html5Qrcode("reader");
+  scanner.start(
+    {facingMode:"environment"},
+    {fps:15, qrbox:{width:240,height:240},
+     formatsToSupport:[
+       Html5QrcodeSupportedFormats.QR_CODE,
+       Html5QrcodeSupportedFormats.EAN_13,
+       Html5QrcodeSupportedFormats.EAN_8,
+       Html5QrcodeSupportedFormats.CODE_128,
+       Html5QrcodeSupportedFormats.CODE_39,
+       Html5QrcodeSupportedFormats.UPC_A,
+       Html5QrcodeSupportedFormats.DATA_MATRIX,
+     ]},
+    onScan,
+    ()=>{}
+  ).catch(e=>{
+    document.getElementById('st').textContent="❌ "+e;
+  });
 }
 
-// jsQR — QR code
-function scanLoop(){
-  if(!active)return;
-  if(video.readyState===video.HAVE_ENOUGH_DATA && video.videoWidth>0){
-    cv.width=video.videoWidth; cv.height=video.videoHeight;
-    ctx2.drawImage(video,0,0);
-
-    // Normal
-    let id=ctx2.getImageData(0,0,cv.width,cv.height);
-    let qr=jsQR(id.data,id.width,id.height,{inversionAttempts:"attemptBoth"});
-    if(qr&&qr.data){active=false;cancelAnimationFrame(aid);stopAll();handleResult(qr.data);return;}
-
-    // Kontrast oshirib qayta urinish
-    id=preprocessForQR(ctx2.getImageData(0,0,cv.width,cv.height));
-    qr=jsQR(id.data,id.width,id.height,{inversionAttempts:"attemptBoth"});
-    if(qr&&qr.data){active=false;cancelAnimationFrame(aid);stopAll();handleResult(qr.data);return;}
-  }
-  aid=requestAnimationFrame(scanLoop);
+function stopScanner(){
+  try{scanner&&scanner.stop().catch(()=>{});}catch(e){}
 }
 
-// ZXing — barcode
-function startZx(){
-  try{
-    if(zxr)zxr.reset();
-    zxr=new ZXing.BrowserMultiFormatReader();
-    zxr.decodeFromVideoElement(video,(res,err)=>{
-      if(res&&active){active=false;if(aid)cancelAnimationFrame(aid);stopAll();handleResult(res.getText());}
-    });
-  }catch(e){}
-}
-
-function stopAll(){
-  try{zxr?.reset();}catch(e){}
-  stream?.getTracks().forEach(t=>t.stop());
-}
-
-function flipCam(){facingMode=facingMode==='environment'?'user':'environment';startCam();}
-function toggleTorch(){
-  const t=stream?.getVideoTracks()[0];if(!t)return;
-  torchOn=!torchOn;
-  t.applyConstraints({advanced:[{torch:torchOn}]}).catch(()=>{});
-  document.getElementById('tbtn').textContent=torchOn?'🔦 O\'ch':'🔦 Yoq';
-}
-
-// ── GALEREYA ─────────────────────────────────────────────────────────────────
-let selFile=null;
+// Galereya
 document.getElementById('fi').addEventListener('change',e=>{
-  const f=e.target.files[0];if(!f)return;
+  const f=e.target.files[0]; if(!f)return;
   selFile=f;
-  const url=URL.createObjectURL(f);
-  document.getElementById('pimg').src=url;
+  document.getElementById('pimg').src=URL.createObjectURL(f);
   document.getElementById('gp').style.display='block';
   document.getElementById('dbtn').style.display='block';
   document.getElementById('gs').textContent='Skanerlash tugmasini bosing';
 });
 
-async function decodeImg(){
+document.getElementById('dbtn').addEventListener('click',()=>{
   if(!selFile)return;
   document.getElementById('gs').textContent='🔍 Tahlil qilinmoqda...';
-  try{
-    const fr=new FileReader();
-    fr.onload=e=>{
-      const img=new Image();
-      img.onload=async()=>{
-        cv.width=img.width; cv.height=img.height;
-        ctx2.drawImage(img,0,0);
+  const rdr=new Html5Qrcode("reader");
+  rdr.scanFile(selFile,true)
+    .then(text=>{handleResult(text);})
+    .catch(()=>{
+      document.getElementById('gs').textContent='❌ QR/Barcode topilmadi. Rasmni yaqinroq oling.';
+    });
+});
 
-        // jsQR normal
-        let id=ctx2.getImageData(0,0,cv.width,cv.height);
-        let qr=jsQR(id.data,id.width,id.height,{inversionAttempts:"attemptBoth"});
-        if(qr&&qr.data){handleResult(qr.data);return;}
-
-        // jsQR kontrast bilan
-        id=preprocessForQR(ctx2.getImageData(0,0,cv.width,cv.height));
-        qr=jsQR(id.data,id.width,id.height,{inversionAttempts:"attemptBoth"});
-        if(qr&&qr.data){handleResult(qr.data);return;}
-
-        // ZXing barcode
-        try{
-          const r=new ZXing.BrowserMultiFormatReader();
-          const res=await r.decodeFromImageElement(img);
-          if(res){handleResult(res.getText());return;}
-        }catch(err){}
-
-        document.getElementById('gs').textContent='❌ QR/Barcode topilmadi. Rasmni yaqinroq oling.';
-      };
-      img.src=e.target.result;
-    };
-    fr.readAsDataURL(selFile);
-  }catch(e){document.getElementById('gs').textContent='❌ Xato: '+e.message;}
-}
-
-// ── NATIJA ───────────────────────────────────────────────────────────────────
 function handleResult(text){
   let code=text;
   const m=text.match(/[?&]start=qr_([^&\s]+)/);
-  if(m)code=m[1];
+  if(m) code=m[1];
   else{
     const m2=text.match(/start=([^&\s]+)/);
-    if(m2)code=m2[1].startsWith('qr_')?m2[1].slice(3):m2[1];
+    if(m2) code=m2[1].startsWith('qr_')?m2[1].slice(3):m2[1];
   }
-  send(code);
+  sendResult(code);
 }
 
-function send(code){
-  document.getElementById('cam-view').style.display='none';
+function sendResult(code){
+  stopScanner();
+  document.getElementById('reader').style.display='none';
   document.getElementById('gal').style.display='none';
+  document.getElementById('st').style.display='none';
   document.getElementById('succ').style.display='flex';
   setTimeout(()=>tg.sendData(JSON.stringify({qr:code})),700);
 }
 
-// ── TAB ──────────────────────────────────────────────────────────────────────
 function switchTab(t){
   document.querySelectorAll('.tab').forEach((el,i)=>
     el.classList.toggle('active',(t==='cam'&&i===0)||(t==='gal'&&i===1)));
   if(t==='cam'){
-    document.getElementById('cam-view').style.display='block';
+    document.getElementById('reader').style.display='block';
     document.getElementById('gal').style.display='none';
-    startCam();
+    document.getElementById('st').style.display='block';
+    startScanner();
   }else{
-    active=false;if(aid)cancelAnimationFrame(aid);stopAll();
-    document.getElementById('cam-view').style.display='none';
+    stopScanner();
+    document.getElementById('reader').style.display='none';
     document.getElementById('gal').style.display='block';
+    document.getElementById('st').style.display='none';
   }
 }
 
-if(!ac)startCam();
+if(!ac) startScanner();
 </script>
 </body>
 </html>

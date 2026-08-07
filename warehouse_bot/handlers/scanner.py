@@ -11,6 +11,7 @@ import os
 
 from aiogram import Router, F
 from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
+from aiogram.fsm.context import FSMContext
 
 from database import db
 from locales.texts import TEXTS, t
@@ -76,6 +77,14 @@ async def open_scanner(message: Message, state: FSMContext):
         parse_mode="HTML",
         reply_markup=kb
     )
+    url_ai = os.environ.get("WEBAPP_AI_URL","")
+    if url_ai:
+        bot_url = os.environ.get("BOT_URL","")
+        full_url = f"{url_ai}?bot={bot_url}" if bot_url else url_ai
+        kb.keyboard.append([KeyboardButton(
+            text="🤖 Macko AI",
+            web_app=WebAppInfo(url=full_url)
+        )])
 
 
 # ── Mini App dan QR data keladi ───────────────────────────────────────────────

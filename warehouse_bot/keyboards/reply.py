@@ -10,7 +10,7 @@ def language_keyboard():
 
 def get_main_keyboard(lang: str, role: str) -> ReplyKeyboardMarkup:
     btn_scanner   = KeyboardButton(text=t(lang, "btn_scanner"))
-    btn_macko_ai  = KeyboardButton(text=t(lang, "btn_macko_ai"))
+    btn_macko_ai = KeyboardButton(text=t(lang, "btn_macko_ai"))
     
     if role in ("admin", "superadmin"):
         btn_excel = KeyboardButton(text=t(lang, "btn_get_excel"))

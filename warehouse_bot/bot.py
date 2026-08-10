@@ -12,7 +12,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 from handlers import scanner
 from utils.qr_utils import init_qr_dir
-
+from handlers import macko_ai_handler
 from handlers import excel_export
 from handlers import qr_handler
 from config import BOT_TOKEN
@@ -159,6 +159,7 @@ async def main():
     dp.include_router(photo_upload.router)
     dp.include_router(excel_export.router)
     dp.include_router(history.router)
+    dp.include_router(macko_ai_handler.router) 
     dp.include_router(search.router)       # ← eng oxirda
 
     await bot.delete_webhook(drop_pending_updates=True)

@@ -50,7 +50,7 @@ O'zbek, rus va ingliz tillarida gaplashadi. Qisqa va aniq javoblar beradi."""
 MODEL = "gemini-2.5-flash"
 
 
-def _call_gemini(key: str, contents: list, max_tokens: int = 2048) -> str:
+def _call_gemini(key: str, contents: list, max_tokens: int = 100000) -> str:
     """Gemini API ga so'rov — 429 bo'lsa 3 marta urinadi."""
     url = (f"https://generativelanguage.googleapis.com/v1beta"
            f"/models/{MODEL}:generateContent?key={key}")
@@ -69,7 +69,7 @@ def _call_gemini(key: str, contents: list, max_tokens: int = 2048) -> str:
     for attempt in range(1, 4):  # 3 marta urinish
         try:
             req = _ur.Request(url, data=payload, headers=headers, method="POST")
-            with _ur.urlopen(req, timeout=60) as resp:
+            with _ur.urlopen(req, timeout=6000) as resp:
                 result = _json.loads(resp.read().decode())
                 return result["candidates"][0]["content"]["parts"][0]["text"]
 

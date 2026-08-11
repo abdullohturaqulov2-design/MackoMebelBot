@@ -47,13 +47,13 @@ AI_SYSTEM = """Siz MackoMebelBot uchun Macko AI yordamchisisiz.
 Mebel, plita, akril, MDF, XDF, laminat, kromka haqida maslahat beradi.
 O'zbek, rus va ingliz tillarida gaplashadi. Qisqa va aniq javoblar beradi."""
 
-#MODEL = "gemini-2.0-flash"
+MODEL = "gemini-2.0-flash"
 
 
 def _call_gemini(key: str, contents: list, max_tokens: int = 100000) -> str:
     """Gemini API ga so'rov — 429 bo'lsa 3 marta urinadi."""
     url = (f"https://generativelanguage.googleapis.com/v1beta"
-           f"/models/gemini-2.5-flash:generateContent?key={key}")
+           f"/models/{MODEL}:generateContent?key={key}")
 
     payload = _json.dumps({
         "contents": contents,

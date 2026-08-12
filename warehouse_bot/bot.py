@@ -85,10 +85,10 @@ def _call_gemini(key: str, contents: list) -> str:
         for attempt in range(1, 3):
             try:
                 req = _ur.Request(url, data=payload, headers=headers, method="POST")
-                with _ur.urlopen(req, timeout=60) as resp:
+                with _ur.urlopen(req, timeout=6000) as resp:
                     result = _json.loads(resp.read().decode())
                     text = result["candidates"][0]["content"]["parts"][0]["text"]
-                    logging.info(f"✅ Gemini ishladi: {url_base[:60]}")
+                    logging.info(f"✅ Gemini ishladi: {url_base[:6000]}")
                     return text
 
             except _ue.HTTPError as e:

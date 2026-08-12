@@ -4,9 +4,6 @@ import logging
 import os
 from aiohttp import web
 import json as _json
-import os, json as _json, time
-import urllib.request as _ur
-import urllib.error as _ue
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -39,63 +36,84 @@ async def handle(request):
 
 """
 bot.py dagi start_web_server() funksiyasini shu bilan ALMASHTIRING.
-gemini-2.5-flash modeli, 429 retry, chiroyli xato xabarlari.
 """
-
+import os, json as _json, time, logging
+import urllib.request as _ur
+import urllib.error as _ue
 
 AI_SYSTEM = """Siz MackoMebelBot uchun Macko AI yordamchisisiz.
 Mebel, plita, akril, MDF, XDF, laminat, kromka haqida maslahat beradi.
 O'zbek, rus va ingliz tillarida gaplashadi. Qisqa va aniq javoblar beradi."""
 
-MODEL = "gemini-2.0-flash"
+# Sinash uchun URL lar (yangi formatdan eskigacha)
+ENDPOINTS = [
+    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+]
 
 
-def _call_gemini(key: str, contents: list, max_tokens: int = 100000) -> str:
-    """Gemini API ga so'rov — 429 bo'lsa 3 marta urinadi."""
-    url = (f"https://generativelanguage.googleapis.com/v1beta"
-           f"/models/{MODEL}:generateContent?key={key}")
-
+def _call_gemini(key: str, contents: list) -> str:
+    """Gemini API — har xil endpoint larni sinab ko'radi."""
     payload = _json.dumps({
         "contents": contents,
         "generationConfig": {
             "temperature": 0.7,
-            "topP": 0.95,
-            "maxOutputTokens": max_tokens,
+            "maxOutputTokens": 45000,
         }
     }).encode()
 
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": key,   # yangi format uchun
+    }
 
-    for attempt in range(1, 4):  # 3 marta urinish
-        try:
-            req = _ur.Request(url, data=payload, headers=headers, method="POST")
-            with _ur.urlopen(req, timeout=6000) as resp:
-                result = _json.loads(resp.read().decode())
-                return result["candidates"][0]["content"]["parts"][0]["text"]
+    last_err = "Noma'lum xato"
 
-        except _ue.HTTPError as e:
-            if e.code == 429:
-                if attempt < 3:
-                    time.sleep(15 * attempt)  # 15s, 30s
-                    continue
-                return "⏳ Gemini limiti tugdi. 1 daqiqadan so'ng qayta urinib ko'ring."
-            elif e.code in (401, 403):
-                return "❌ GEMINI_API_KEY noto'g'ri yoki muddati o'tgan."
-            else:
-                return f"❌ Gemini xato ({e.code}). Qayta urinib ko'ring."
+    for url_base in ENDPOINTS:
+        # Kalit URL da ham, headerlarda ham
+        url = f"{url_base}?key={key}"
+        for attempt in range(1, 3):
+            try:
+                req = _ur.Request(url, data=payload, headers=headers, method="POST")
+                with _ur.urlopen(req, timeout=60) as resp:
+                    result = _json.loads(resp.read().decode())
+                    text = result["candidates"][0]["content"]["parts"][0]["text"]
+                    logging.info(f"✅ Gemini ishladi: {url_base[:60]}")
+                    return text
 
-        except Exception as e:
-            if attempt == 3:
-                return f"❌ Ulanish xatosi: {str(e)[:80]}"
-            time.sleep(5)
+            except _ue.HTTPError as e:
+                body = e.read().decode("utf-8", errors="ignore")[:200]
+                if e.code == 404:
+                    last_err = f"404 (endpoint topilmadi)"
+                    break  # Keyingi endpoint ga o'tish
+                elif e.code == 429:
+                    if attempt < 2:
+                        time.sleep(20)
+                        continue
+                    return "⏳ So'rov limiti tugdi. 1 daqiqadan so'ng qayta urinib ko'ring."
+                elif e.code in (401, 403):
+                    return "❌ API kalit noto'g'ri. GEMINI_API_KEY ni tekshiring."
+                else:
+                    last_err = f"{e.code}: {body[:80]}"
+                    break
+
+            except Exception as e:
+                last_err = str(e)[:80]
+                break
+
+    return f"❌ Gemini ulanmadi: {last_err}\nQayta urinib ko'ring."
 
 
 async def handle_ai_chat(request):
     """Macko AI mini app uchun Gemini proxy."""
-    headers_cors = {
+    cors = {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, x-goog-api-key",
     }
     try:
         data    = await request.json()
@@ -107,13 +125,13 @@ async def handle_ai_chat(request):
                os.environ.get("GOOGLE_API_KEY", "")).strip()
         if not key:
             return web.json_response(
-                {"error": "GEMINI_API_KEY Render da sozlanmagan"},
-                headers=headers_cors)
+                {"error": "GEMINI_API_KEY Render Environment da sozlanmagan!"},
+                headers=cors)
 
         # Suhbat tarixi
         contents = [
-            {"role": "user",   "parts": [{"text": AI_SYSTEM}]},
-            {"role": "model",  "parts": [{"text": "Tushunarli! Macko AI sifatida yordam beraman."}]},
+            {"role": "user",  "parts": [{"text": AI_SYSTEM}]},
+            {"role": "model", "parts": [{"text": "Tushunarli! Macko AI sifatida yordam beraman."}]},
         ]
         for h in history[-8:]:
             role = "model" if h.get("role") == "model" else "user"
@@ -121,8 +139,7 @@ async def handle_ai_chat(request):
 
         # Joriy xabar
         parts = []
-        if message:
-            parts.append({"text": message})
+        if message: parts.append({"text": message})
         for img in images[:2]:
             parts.append({
                 "inline_data": {
@@ -130,45 +147,43 @@ async def handle_ai_chat(request):
                     "data": img.get("data", "")
                 }
             })
-        if not parts:
-            parts.append({"text": "Salom"})
+        if not parts: parts.append({"text": "Salom"})
         contents.append({"role": "user", "parts": parts})
 
-        # API chaqirish
         response_text = _call_gemini(key, contents)
-        return web.json_response({"response": response_text}, headers=headers_cors)
+        return web.json_response({"response": response_text}, headers=cors)
 
     except Exception as e:
         return web.json_response(
             {"error": f"Server xato: {str(e)[:100]}"},
-            headers=headers_cors)
+            headers=cors)
 
 
 async def handle_cors(request):
     return web.Response(headers={
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Headers": "Content-Type, x-goog-api-key",
     })
 
 
 async def handle_ping(request):
-    return web.Response(text="MackoMebelBot ishlayapti OK!")
+    return web.Response(text="MackoMebelBot OK!")
 
 
 async def start_web_server():
     app = web.Application()
     app.add_routes([
-        web.get("/",              handle_ping),
-        web.post("/ai/chat",      handle_ai_chat),
-        web.options("/ai/chat",   handle_cors),
+        web.get("/",             handle_ping),
+        web.post("/ai/chat",     handle_ai_chat),
+        web.options("/ai/chat",  handle_cors),
     ])
     runner = web.AppRunner(app)
     await runner.setup()
     port = int(os.environ.get("PORT", 10000))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
-    logging.info(f"✅ Web server: http://0.0.0.0:{port}")
+    logging.info(f"✅ Web server port {port}")
 
 
 

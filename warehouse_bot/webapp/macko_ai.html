@@ -8,73 +8,48 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0f0f1a;--card:#1a1a2e;--blue:#7eb3ff;--user:#2d4a7a;--ai:#1e1e3a;--text:#e8e8f0;--sub:#888}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;
-     height:100vh;display:flex;flex-direction:column;overflow:hidden}
-
-/* Header */
-.header{background:var(--card);padding:10px 14px;display:flex;align-items:center;
-        gap:10px;border-bottom:1px solid #222;flex-shrink:0}
-.logo{width:36px;height:36px;background:linear-gradient(135deg,#7eb3ff,#4fc3f7);
-      border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.header{background:var(--card);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #222;flex-shrink:0}
+.logo{width:36px;height:36px;background:linear-gradient(135deg,#7eb3ff,#4fc3f7);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
 .hinfo h3{font-size:14px;font-weight:700;color:var(--blue)}
 .hinfo p{font-size:11px;color:var(--sub)}
-.status{margin-left:auto;width:8px;height:8px;background:#27ae60;border-radius:50%}
-
-/* Chat area */
+.hbtns{margin-left:auto;display:flex;gap:6px}
+.hbtn{background:none;border:1px solid #333;color:var(--sub);padding:4px 8px;border-radius:7px;cursor:pointer;font-size:11px}
+.hbtn:hover{border-color:var(--blue);color:var(--blue)}
 #chat{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
-#chat::-webkit-scrollbar{width:4px}
+#chat::-webkit-scrollbar{width:3px}
 #chat::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-
-/* Messages */
-.msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;
-     animation:fadein .3s ease}
-@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .msg.user{background:var(--user);align-self:flex-end;border-bottom-right-radius:4px;color:#e0eeff}
 .msg.ai{background:var(--ai);align-self:flex-start;border-bottom-left-radius:4px}
 .msg.ai pre{background:#111;padding:8px;border-radius:6px;overflow-x:auto;font-size:12px;margin:6px 0}
 .msg.ai code{background:#111;padding:2px 5px;border-radius:4px;font-size:12px}
-.typing{display:flex;gap:5px;align-items:center;padding:12px 14px;
-        background:var(--ai);border-radius:14px;border-bottom-left-radius:4px;align-self:flex-start}
-.dot{width:8px;height:8px;background:var(--sub);border-radius:50%;animation:bounce 1.2s infinite}
+.msg-time{font-size:10px;color:var(--sub);margin-top:4px;text-align:right}
+.typing{display:flex;gap:5px;align-items:center;padding:12px 14px;background:var(--ai);border-radius:14px;border-bottom-left-radius:4px;align-self:flex-start}
+.dot{width:7px;height:7px;background:var(--sub);border-radius:50%;animation:b 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-
-/* Intro */
-.intro{display:flex;flex-direction:column;align-items:center;justify-content:center;
-       flex:1;gap:12px;padding:20px;text-align:center}
-.intro-logo{width:72px;height:72px;background:linear-gradient(135deg,#7eb3ff,#4fc3f7);
-            border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:40px}
-.intro h3{font-size:18px;font-weight:700;color:var(--blue)}
+@keyframes b{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.intro{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:20px;text-align:center}
+.ilogo{width:68px;height:68px;background:linear-gradient(135deg,#7eb3ff,#4fc3f7);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:38px}
+.intro h3{font-size:17px;font-weight:700;color:var(--blue)}
 .intro p{font-size:13px;color:var(--sub);max-width:260px;line-height:1.5}
 .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:4px}
-.chip{background:var(--ai);border:1px solid #333;padding:7px 12px;border-radius:20px;
-      font-size:12px;cursor:pointer;transition:.2s;color:var(--text)}
+.chip{background:var(--ai);border:1px solid #333;padding:7px 12px;border-radius:20px;font-size:12px;cursor:pointer;color:var(--text)}
 .chip:hover{background:var(--user);border-color:var(--blue)}
-
-/* Input area */
 .input-area{background:var(--card);padding:10px 12px;border-top:1px solid #222;flex-shrink:0}
 .input-row{display:flex;gap:8px;align-items:flex-end}
-.img-btn{width:38px;height:38px;background:var(--ai);border:1px solid #333;border-radius:10px;
-         cursor:pointer;display:flex;align-items:center;justify-content:center;
-         font-size:18px;flex-shrink:0;transition:.2s}
+.img-btn{width:38px;height:38px;background:var(--ai);border:1px solid #333;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 .img-btn:hover{background:var(--user)}
-textarea{flex:1;background:var(--ai);border:1px solid #333;border-radius:10px;
-         color:var(--text);font-size:14px;padding:9px 12px;resize:none;
-         font-family:inherit;max-height:120px;min-height:38px;line-height:1.5;outline:none}
+textarea{flex:1;background:var(--ai);border:1px solid #333;border-radius:10px;color:var(--text);font-size:14px;padding:9px 12px;resize:none;font-family:inherit;max-height:100px;min-height:38px;line-height:1.5;outline:none}
 textarea:focus{border-color:var(--blue)}
-.send-btn{width:38px;height:38px;background:var(--blue);border:none;border-radius:10px;
-          cursor:pointer;display:flex;align-items:center;justify-content:center;
-          font-size:18px;flex-shrink:0;transition:.2s}
+.send-btn{width:38px;height:38px;background:var(--blue);border:none;border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0}
 .send-btn:hover{background:#5a9ee8}.send-btn:disabled{opacity:.5;cursor:default}
 #img-input{display:none}
-.img-preview{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.img-thumb{position:relative;width:60px;height:60px}
-.img-thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
-.img-thumb .rm{position:absolute;top:-5px;right:-5px;background:#e74c3c;color:#fff;
-               border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;
-               font-size:11px;display:flex;align-items:center;justify-content:center}
-.clear-btn{background:none;border:1px solid #e74c3c;color:#e74c3c;padding:5px 10px;
-           border-radius:8px;cursor:pointer;font-size:11px;margin-top:4px}
+.img-prev{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.itp{position:relative;width:56px;height:56px}
+.itp img{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.itp .rm{position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:10px}
 </style>
 </head>
 <body>
@@ -82,33 +57,23 @@ textarea:focus{border-color:var(--blue)}
   <div class="logo">🤖</div>
   <div class="hinfo">
     <h3>Macko AI</h3>
-    <p>Sadoqat bilan ishlaydi</p>
+    <p id="hstatus">Gemini AI bilan ishlaydi</p>
   </div>
-  <div class="status" id="status-dot"></div>
+  <div class="hbtns">
+    <button class="hbtn" onclick="clearHistory()">🗑 Tozalash</button>
+  </div>
 </div>
 
-<div id="chat">
-  <div class="intro" id="intro">
-    <div class="intro-logo">🤖</div>
-    <h3>Macko AI</h3>
-    <p>Savol bering, rasm tahlil qilaman, yordam beraman!</p>
-    <div class="chips">
-      <div class="chip" onclick="quickSend('Salom! Menga yordam bera olasanmi?')">👋 Salom</div>
-      <div class="chip" onclick="quickSend('Mebel haqida maslahat ber')">🪑 Mebel</div>
-      <div class="chip" onclick="quickSend('Akril plita qanday tanlanadi?')">📦 Akril</div>
-      <div class="chip" onclick="quickSend('Bu rasmni tahlil qil')">🖼 Rasm</div>
-    </div>
-  </div>
-</div>
+<div id="chat"></div>
 
 <div class="input-area">
-  <div class="img-preview" id="imgPreview"></div>
+  <div class="img-prev" id="imgPrev"></div>
   <div class="input-row">
     <button class="img-btn" onclick="document.getElementById('img-input').click()">🖼</button>
     <input type="file" id="img-input" accept="image/*" multiple>
     <textarea id="inp" placeholder="Xabar yozing..." rows="1"
-              onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-    <button class="send-btn" id="send-btn" onclick="sendMsg()">➤</button>
+              onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
+    <button class="send-btn" id="sbtn" onclick="send()">➤</button>
   </div>
 </div>
 
@@ -116,131 +81,174 @@ textarea:focus{border-color:var(--blue)}
 const tg=window.Telegram.WebApp; tg.ready(); tg.expand();
 const ps=new URLSearchParams(window.location.search);
 const BOT_URL=(ps.get('bot')||'').replace(/\/$/,'');
-
+const HIST_KEY='macko_ai_history';
 const chat=document.getElementById('chat');
-const intro=document.getElementById('intro');
 const inp=document.getElementById('inp');
-const sendBtn=document.getElementById('send-btn');
-const imgPreview=document.getElementById('imgPreview');
+const sbtn=document.getElementById('sbtn');
 
-let history=[], pendingImages=[], isTyping=false;
+let history=[], pendingImgs=[], busy=false;
 
-// ── Rasm yuklash ──────────────────────────────────────────────────────────────
+// ── Tarixni saqlash/yuklash ──────────────────────────────────────────────────
+function saveHistory(){
+  try{localStorage.setItem(HIST_KEY,JSON.stringify(history.slice(-40)));}catch(e){}
+}
+function loadHistory(){
+  try{
+    const d=localStorage.getItem(HIST_KEY);
+    if(!d)return;
+    history=JSON.parse(d);
+    // Eski xabarlarni ko'rsatish
+    history.forEach(h=>{
+      if(h.role==='user') appendMsg(h.content,'user',h.time,false);
+      else appendMsg(h.content,'ai',h.time,false);
+    });
+    scrollDown();
+  }catch(e){history=[];}
+}
+
+function clearHistory(){
+  if(!confirm('Barcha suhbat tarixi o\'chirilsinmi?'))return;
+  history=[];
+  try{localStorage.removeItem(HIST_KEY);}catch(e){}
+  chat.innerHTML='';
+  showIntro();
+}
+
+// ── Intro ────────────────────────────────────────────────────────────────────
+function showIntro(){
+  if(history.length>0)return;
+  chat.innerHTML=`
+  <div class="intro" id="intro">
+    <div class="ilogo">🤖</div>
+    <h3>Macko AI</h3>
+    <p>Savol bering, rasm tahlil qilaman, yordam beraman!</p>
+    <div class="chips">
+      <div class="chip" onclick="quick('Salom! Menga yordam bera olasanmi?')">👋 Salom</div>
+      <div class="chip" onclick="quick('Mebel haqida maslahat ber')">🪑 Mebel</div>
+      <div class="chip" onclick="quick('Akril plita qanday tanlanadi?')">📦 Akril</div>
+      <div class="chip" onclick="quick('MDF va XDF farqi nima?')">📋 MDF/XDF</div>
+    </div>
+  </div>`;
+}
+
+// ── Xabar ko'rsatish ─────────────────────────────────────────────────────────
+function now(){
+  return new Date().toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
+}
+
+function appendMsg(text, role, time, animate=true){
+  const intro=document.getElementById('intro');
+  if(intro)intro.remove();
+  const d=document.createElement('div');
+  d.className=`msg ${role}`;
+  if(!animate)d.style.animation='none';
+  if(role==='ai'){
+    let html=text
+      .replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,'<em>$1</em>')
+      .replace(/\n/g,'<br>');
+    d.innerHTML=html+`<div class="msg-time">${time||now()}</div>`;
+  }else{
+    d.textContent=text;
+    d.innerHTML+=`<div class="msg-time">${time||now()}</div>`;
+  }
+  chat.appendChild(d);
+  return d;
+}
+
+// ── Rasm ─────────────────────────────────────────────────────────────────────
 document.getElementById('img-input').addEventListener('change',e=>{
   Array.from(e.target.files).forEach(f=>{
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      pendingImages.push({name:f.name,type:f.type,data:ev.target.result.split(',')[1]});
-      const thumb=document.createElement('div');
-      thumb.className='img-thumb';
-      const idx=pendingImages.length-1;
-      thumb.innerHTML=`<img src="${ev.target.result}">
-        <button class="rm" onclick="removeImg(${idx})">×</button>`;
-      imgPreview.appendChild(thumb);
+    const r=new FileReader();
+    r.onload=ev=>{
+      pendingImgs.push({name:f.name,type:f.type,data:ev.target.result.split(',')[1]});
+      const t=document.createElement('div'); t.className='itp';
+      const idx=pendingImgs.length-1;
+      t.innerHTML=`<img src="${ev.target.result}"><button class="rm" onclick="rmImg(${idx})">×</button>`;
+      document.getElementById('imgPrev').appendChild(t);
     };
-    reader.readAsDataURL(f);
+    r.readAsDataURL(f);
   });
   e.target.value='';
 });
 
-function removeImg(i){
-  pendingImages.splice(i,1);
-  imgPreview.innerHTML='';
-  pendingImages.forEach((img,j)=>{
-    const thumb=document.createElement('div'); thumb.className='img-thumb';
-    thumb.innerHTML=`<img src="data:${img.type};base64,${img.data}">
-      <button class="rm" onclick="removeImg(${j})">×</button>`;
-    imgPreview.appendChild(thumb);
+function rmImg(i){
+  pendingImgs.splice(i,1);
+  const prev=document.getElementById('imgPrev');
+  prev.innerHTML='';
+  pendingImgs.forEach((img,j)=>{
+    const t=document.createElement('div'); t.className='itp';
+    t.innerHTML=`<img src="data:${img.type};base64,${img.data}"><button class="rm" onclick="rmImg(${j})">×</button>`;
+    prev.appendChild(t);
   });
 }
 
-// ── Xabar yuborish ────────────────────────────────────────────────────────────
-function quickSend(text){inp.value=text; sendMsg();}
+// ── Yuborish ─────────────────────────────────────────────────────────────────
+function quick(t){inp.value=t; send();}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
 
-function handleKey(e){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}
-}
-
-function autoResize(el){
-  el.style.height='auto';
-  el.style.height=Math.min(el.scrollHeight,120)+'px';
-}
-
-async function sendMsg(){
+async function send(){
   const text=inp.value.trim();
-  if(!text&&pendingImages.length===0)return;
-  if(isTyping)return;
+  if(!text&&pendingImgs.length===0)return;
+  if(busy)return;
 
-  // Intro yashirish
-  if(intro.parentNode)intro.remove();
-
-  // Foydalanuvchi xabari
-  const userDiv=document.createElement('div');
-  userDiv.className='msg user';
+  const t=now();
   let content=text;
-  if(pendingImages.length>0) content=(text?text+'\n':'')+'🖼 '+pendingImages.length+' ta rasm';
-  userDiv.textContent=content;
-  chat.appendChild(userDiv);
+  if(pendingImgs.length>0) content=(text?text+'\n':'')+'🖼 '+pendingImgs.length+' ta rasm';
+  appendMsg(content,'user',t);
 
-  const images=[...pendingImages];
+  const imgs=[...pendingImgs];
   inp.value=''; inp.style.height='auto';
-  pendingImages=[]; imgPreview.innerHTML='';
+  pendingImgs=[]; document.getElementById('imgPrev').innerHTML='';
   scrollDown();
 
-  // Typing indicator
-  const typingDiv=document.createElement('div');
-  typingDiv.className='typing';
-  typingDiv.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-  chat.appendChild(typingDiv); scrollDown();
-  isTyping=true; sendBtn.disabled=true;
+  // Typing
+  const typ=document.createElement('div');
+  typ.className='typing';
+  typ.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  chat.appendChild(typ); scrollDown();
+  busy=true; sbtn.disabled=true;
+  document.getElementById('hstatus').textContent='Javob yozilmoqda...';
 
   try{
-    const response=await callAI(text, images);
-    typingDiv.remove();
-    addAIMsg(response);
-    history.push({role:'user',content:text||(images.length>0?'[Rasm]':'')});
-    history.push({role:'model',content:response});
-    if(history.length>20) history=history.slice(-20);
+    const resp=await fetch(BOT_URL+'/ai/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        message:text,
+        history:history.slice(-10).map(h=>({role:h.role,content:h.content})),
+        images:imgs
+      })
+    });
+    const data=await resp.json();
+    typ.remove();
+    const aiTime=now();
+    const aiText=data.error?`❌ ${data.error}`:data.response;
+    appendMsg(aiText,'ai',aiTime);
+
+    // Tarixga qo'shish
+    history.push({role:'user',content:content,time:t});
+    history.push({role:'model',content:aiText,time:aiTime});
+    if(history.length>40)history=history.slice(-40);
+    saveHistory();
+
   }catch(e){
-    typingDiv.remove();
-    addAIMsg('❌ Xato: '+e.message+'\n\nIltimos qayta urinib ko\'ring.');
+    typ.remove();
+    appendMsg('❌ Server bilan ulanib bo\'lmadi. BOT_URL ni tekshiring.','ai',now());
   }
-  isTyping=false; sendBtn.disabled=false;
-}
-
-async function callAI(text, images){
-  if(!BOT_URL) throw new Error('BOT_URL sozlanmagan');
-
-  const body={message:text, history:history};
-  if(images.length>0) body.images=images;
-
-  const resp=await fetch(BOT_URL+'/ai/chat',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  });
-  if(!resp.ok) throw new Error('Server xato: '+resp.status);
-  const data=await resp.json();
-  if(data.error) throw new Error(data.error);
-  return data.response;
-}
-
-function addAIMsg(text){
-  const div=document.createElement('div');
-  div.className='msg ai';
-  // Oddiy markdown: **bold**, `code`, ```code block```
-  let html=text
-    .replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
-    .replace(/`([^`]+)`/g,'<code>$1</code>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/\n/g,'<br>');
-  div.innerHTML=html;
-  chat.appendChild(div);
+  busy=false; sbtn.disabled=false;
+  document.getElementById('hstatus').textContent='Gemini AI bilan ishlaydi';
   scrollDown();
 }
 
 function scrollDown(){chat.scrollTop=chat.scrollHeight;}
+
+// Boshlash
+loadHistory();
+if(history.length===0) showIntro();
 </script>
 </body>
 </html>

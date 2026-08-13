@@ -13,19 +13,18 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif
 .logo{width:36px;height:36px;background:linear-gradient(135deg,#7eb3ff,#4fc3f7);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
 .hinfo h3{font-size:14px;font-weight:700;color:var(--blue)}
 .hinfo p{font-size:11px;color:var(--sub)}
-.hbtns{margin-left:auto;display:flex;gap:6px}
+.hbtns{margin-left:auto}
 .hbtn{background:none;border:1px solid #333;color:var(--sub);padding:4px 8px;border-radius:7px;cursor:pointer;font-size:11px}
-.hbtn:hover{border-color:var(--blue);color:var(--blue)}
 #chat{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 #chat::-webkit-scrollbar{width:3px}
 #chat::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-.msg{max-width:85%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;animation:fi .25s ease}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg{max-width:86%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .msg.user{background:var(--user);align-self:flex-end;border-bottom-right-radius:4px;color:#e0eeff}
 .msg.ai{background:var(--ai);align-self:flex-start;border-bottom-left-radius:4px}
 .msg.ai pre{background:#111;padding:8px;border-radius:6px;overflow-x:auto;font-size:12px;margin:6px 0}
 .msg.ai code{background:#111;padding:2px 5px;border-radius:4px;font-size:12px}
-.msg-time{font-size:10px;color:var(--sub);margin-top:4px;text-align:right}
+.mtime{font-size:10px;color:var(--sub);margin-top:4px;text-align:right}
 .typing{display:flex;gap:5px;align-items:center;padding:12px 14px;background:var(--ai);border-radius:14px;border-bottom-left-radius:4px;align-self:flex-start}
 .dot{width:7px;height:7px;background:var(--sub);border-radius:50%;animation:b 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
@@ -40,16 +39,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif
 .input-area{background:var(--card);padding:10px 12px;border-top:1px solid #222;flex-shrink:0}
 .input-row{display:flex;gap:8px;align-items:flex-end}
 .img-btn{width:38px;height:38px;background:var(--ai);border:1px solid #333;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.img-btn:hover{background:var(--user)}
 textarea{flex:1;background:var(--ai);border:1px solid #333;border-radius:10px;color:var(--text);font-size:14px;padding:9px 12px;resize:none;font-family:inherit;max-height:100px;min-height:38px;line-height:1.5;outline:none}
 textarea:focus{border-color:var(--blue)}
-.send-btn{width:38px;height:38px;background:var(--blue);border:none;border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0}
-.send-btn:hover{background:#5a9ee8}.send-btn:disabled{opacity:.5;cursor:default}
-#img-input{display:none}
-.img-prev{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.itp{position:relative;width:56px;height:56px}
+.sbtn{width:38px;height:38px;background:var(--blue);border:none;border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0}
+.sbtn:disabled{opacity:.5;cursor:default}
+#fi{display:none}
+.prev{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.itp{position:relative;width:52px;height:52px}
 .itp img{width:100%;height:100%;object-fit:cover;border-radius:8px}
-.itp .rm{position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:10px}
+.itp .rm{position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:16px;height:16px;cursor:pointer;font-size:10px;line-height:16px;text-align:center}
 </style>
 </head>
 <body>
@@ -57,198 +55,188 @@ textarea:focus{border-color:var(--blue)}
   <div class="logo">🤖</div>
   <div class="hinfo">
     <h3>Macko AI</h3>
-    <p id="hstatus">Gemini AI bilan ishlaydi</p>
+    <p id="hst">Gemini AI · Tez javob</p>
   </div>
   <div class="hbtns">
-    <button class="hbtn" onclick="clearHistory()">🗑 Tozalash</button>
+    <button class="hbtn" onclick="clearAll()">🗑 Tozalash</button>
   </div>
 </div>
-
 <div id="chat"></div>
-
 <div class="input-area">
-  <div class="img-prev" id="imgPrev"></div>
+  <div class="prev" id="prev"></div>
   <div class="input-row">
-    <button class="img-btn" onclick="document.getElementById('img-input').click()">🖼</button>
-    <input type="file" id="img-input" accept="image/*" multiple>
+    <button class="img-btn" onclick="document.getElementById('fi').click()" title="Rasm yuklash">🖼</button>
+    <input type="file" id="fi" accept="image/*">
     <textarea id="inp" placeholder="Xabar yozing..." rows="1"
-              onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
-    <button class="send-btn" id="sbtn" onclick="send()">➤</button>
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+    <button class="sbtn" id="sb" onclick="send()">➤</button>
   </div>
 </div>
-
 <script>
 const tg=window.Telegram.WebApp; tg.ready(); tg.expand();
 const ps=new URLSearchParams(window.location.search);
-const BOT_URL=(ps.get('bot')||'').replace(/\/$/,'');
-const HIST_KEY='macko_ai_history';
+const BOT=(ps.get('bot')||'').replace(/\/$/,'');
+const HKEY='macko_hist_v2';
 const chat=document.getElementById('chat');
 const inp=document.getElementById('inp');
-const sbtn=document.getElementById('sbtn');
+const sb=document.getElementById('sb');
+let history=[],imgs=[],busy=false;
 
-let history=[], pendingImgs=[], busy=false;
-
-// ── Tarixni saqlash/yuklash ──────────────────────────────────────────────────
-function saveHistory(){
-  try{localStorage.setItem(HIST_KEY,JSON.stringify(history.slice(-40)));}catch(e){}
+// ── Rasm kompressiya (max 600px, JPEG 60%) ────────────────────────────────────
+function compressImg(file){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=600,Q=0.6;
+        let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){
+          if(w>h){h=Math.round(h*MAX/w);w=MAX;}
+          else{w=Math.round(w*MAX/h);h=MAX;}
+        }
+        const c=document.createElement('canvas');
+        c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        const d=c.toDataURL('image/jpeg',Q);
+        res({type:'image/jpeg',data:d.split(',')[1],preview:d});
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  });
 }
-function loadHistory(){
+
+document.getElementById('fi').addEventListener('change',async e=>{
+  const f=e.target.files[0]; if(!f)return;
+  document.getElementById('hst').textContent='Rasm kichraytirilmoqda...';
+  const compressed=await compressImg(f);
+  imgs=[compressed];  // faqat 1 ta rasm
+  const prev=document.getElementById('prev');
+  prev.innerHTML=`<div class="itp">
+    <img src="${compressed.preview}">
+    <button class="rm" onclick="imgs=[];document.getElementById('prev').innerHTML=''">×</button>
+  </div>`;
+  document.getElementById('hst').textContent='Rasm tayyor ✅';
+  setTimeout(()=>document.getElementById('hst').textContent='Gemini AI · Tez javob',2000);
+  e.target.value='';
+});
+
+// ── Tarix ─────────────────────────────────────────────────────────────────────
+function saveH(){try{localStorage.setItem(HKEY,JSON.stringify(history.slice(-30)));}catch(e){}}
+function loadH(){
   try{
-    const d=localStorage.getItem(HIST_KEY);
+    const d=localStorage.getItem(HKEY);
     if(!d)return;
     history=JSON.parse(d);
-    // Eski xabarlarni ko'rsatish
-    history.forEach(h=>{
-      if(h.role==='user') appendMsg(h.content,'user',h.time,false);
-      else appendMsg(h.content,'ai',h.time,false);
-    });
-    scrollDown();
+    history.forEach(h=>addMsg(h.content,h.role,h.time,false));
+    scrollD();
   }catch(e){history=[];}
 }
-
-function clearHistory(){
-  if(!confirm('Barcha suhbat tarixi o\'chirilsinmi?'))return;
-  history=[];
-  try{localStorage.removeItem(HIST_KEY);}catch(e){}
-  chat.innerHTML='';
-  showIntro();
+function clearAll(){
+  if(!confirm('Suhbat tarixini o\'chirasizmi?'))return;
+  history=[];try{localStorage.removeItem(HKEY);}catch(e){}
+  chat.innerHTML='';showIntro();
 }
 
-// ── Intro ────────────────────────────────────────────────────────────────────
 function showIntro(){
   if(history.length>0)return;
-  chat.innerHTML=`
-  <div class="intro" id="intro">
+  chat.innerHTML=`<div class="intro" id="intro">
     <div class="ilogo">🤖</div>
     <h3>Macko AI</h3>
-    <p>Savol bering, rasm tahlil qilaman, yordam beraman!</p>
+    <p>Savol bering yoki rasm yuklang — tez javob beraman!</p>
     <div class="chips">
-      <div class="chip" onclick="quick('Salom! Menga yordam bera olasanmi?')">👋 Salom</div>
+      <div class="chip" onclick="quick('Salom!')">👋 Salom</div>
       <div class="chip" onclick="quick('Mebel haqida maslahat ber')">🪑 Mebel</div>
-      <div class="chip" onclick="quick('Akril plita qanday tanlanadi?')">📦 Akril</div>
-      <div class="chip" onclick="quick('MDF va XDF farqi nima?')">📋 MDF/XDF</div>
+      <div class="chip" onclick="quick('Akril va MDF farqi nima?')">📦 Akril/MDF</div>
+      <div class="chip" onclick="quick('Laminat tanlashda nimalarga e\'tibor berish kerak?')">🪵 Laminat</div>
     </div>
   </div>`;
 }
 
-// ── Xabar ko'rsatish ─────────────────────────────────────────────────────────
-function now(){
-  return new Date().toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
-}
+// ── Xabar ─────────────────────────────────────────────────────────────────────
+function now(){return new Date().toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});}
 
-function appendMsg(text, role, time, animate=true){
+function addMsg(text,role,time,anim=true){
   const intro=document.getElementById('intro');
   if(intro)intro.remove();
   const d=document.createElement('div');
   d.className=`msg ${role}`;
-  if(!animate)d.style.animation='none';
+  if(!anim)d.style.animation='none';
   if(role==='ai'){
-    let html=text
+    let h=text
       .replace(/```([\s\S]*?)```/g,'<pre><code>$1</code></pre>')
       .replace(/`([^`]+)`/g,'<code>$1</code>')
       .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
       .replace(/\*(.+?)\*/g,'<em>$1</em>')
       .replace(/\n/g,'<br>');
-    d.innerHTML=html+`<div class="msg-time">${time||now()}</div>`;
+    d.innerHTML=h+`<div class="mtime">${time||now()}</div>`;
   }else{
     d.textContent=text;
-    d.innerHTML+=`<div class="msg-time">${time||now()}</div>`;
+    d.innerHTML+=`<div class="mtime">${time||now()}</div>`;
   }
   chat.appendChild(d);
   return d;
 }
 
-// ── Rasm ─────────────────────────────────────────────────────────────────────
-document.getElementById('img-input').addEventListener('change',e=>{
-  Array.from(e.target.files).forEach(f=>{
-    const r=new FileReader();
-    r.onload=ev=>{
-      pendingImgs.push({name:f.name,type:f.type,data:ev.target.result.split(',')[1]});
-      const t=document.createElement('div'); t.className='itp';
-      const idx=pendingImgs.length-1;
-      t.innerHTML=`<img src="${ev.target.result}"><button class="rm" onclick="rmImg(${idx})">×</button>`;
-      document.getElementById('imgPrev').appendChild(t);
-    };
-    r.readAsDataURL(f);
-  });
-  e.target.value='';
-});
-
-function rmImg(i){
-  pendingImgs.splice(i,1);
-  const prev=document.getElementById('imgPrev');
-  prev.innerHTML='';
-  pendingImgs.forEach((img,j)=>{
-    const t=document.createElement('div'); t.className='itp';
-    t.innerHTML=`<img src="data:${img.type};base64,${img.data}"><button class="rm" onclick="rmImg(${j})">×</button>`;
-    prev.appendChild(t);
-  });
-}
-
-// ── Yuborish ─────────────────────────────────────────────────────────────────
-function quick(t){inp.value=t; send();}
-function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
-function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function quick(t){inp.value=t;send();}
 
 async function send(){
   const text=inp.value.trim();
-  if(!text&&pendingImgs.length===0)return;
+  if(!text&&imgs.length===0)return;
   if(busy)return;
 
   const t=now();
   let content=text;
-  if(pendingImgs.length>0) content=(text?text+'\n':'')+'🖼 '+pendingImgs.length+' ta rasm';
-  appendMsg(content,'user',t);
+  if(imgs.length>0)content=(text?text+'\n':'')+'🖼 Rasm yuborildi';
+  addMsg(content,'user',t);
 
-  const imgs=[...pendingImgs];
-  inp.value=''; inp.style.height='auto';
-  pendingImgs=[]; document.getElementById('imgPrev').innerHTML='';
-  scrollDown();
+  const curImgs=[...imgs];
+  inp.value='';inp.style.height='auto';
+  imgs=[];document.getElementById('prev').innerHTML='';
+  scrollD();
 
-  // Typing
   const typ=document.createElement('div');
   typ.className='typing';
   typ.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-  chat.appendChild(typ); scrollDown();
-  busy=true; sbtn.disabled=true;
-  document.getElementById('hstatus').textContent='Javob yozilmoqda...';
+  chat.appendChild(typ);scrollD();
+  busy=true;sb.disabled=true;
+  document.getElementById('hst').textContent='Javob tayyorlanmoqda...';
 
   try{
-    const resp=await fetch(BOT_URL+'/ai/chat',{
+    if(!BOT)throw new Error('BOT_URL sozlanmagan. Render da BOT_URL ni qo\'shing.');
+    const r=await fetch(BOT+'/ai/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         message:text,
-        history:history.slice(-10).map(h=>({role:h.role,content:h.content})),
-        images:imgs
+        history:history.slice(-6).map(h=>({role:h.role,content:h.content.slice(0,400)})),
+        images:curImgs.map(i=>({type:i.type,data:i.data}))
       })
     });
-    const data=await resp.json();
+    if(!r.ok)throw new Error(`Server ${r.status}`);
+    const data=await r.json();
     typ.remove();
-    const aiTime=now();
-    const aiText=data.error?`❌ ${data.error}`:data.response;
-    appendMsg(aiText,'ai',aiTime);
-
-    // Tarixga qo'shish
+    const at=now();
+    const res=data.error?`❌ ${data.error}`:data.response;
+    addMsg(res,'ai',at);
     history.push({role:'user',content:content,time:t});
-    history.push({role:'model',content:aiText,time:aiTime});
-    if(history.length>40)history=history.slice(-40);
-    saveHistory();
-
+    history.push({role:'model',content:res,time:at});
+    if(history.length>30)history=history.slice(-30);
+    saveH();
   }catch(e){
     typ.remove();
-    appendMsg('❌ Server bilan ulanib bo\'lmadi. BOT_URL ni tekshiring.','ai',now());
+    addMsg('❌ '+e.message,'ai',now());
   }
-  busy=false; sbtn.disabled=false;
-  document.getElementById('hstatus').textContent='Gemini AI bilan ishlaydi';
-  scrollDown();
+  busy=false;sb.disabled=false;
+  document.getElementById('hst').textContent='Gemini AI · Tez javob';
+  scrollD();
 }
 
-function scrollDown(){chat.scrollTop=chat.scrollHeight;}
-
-// Boshlash
-loadHistory();
-if(history.length===0) showIntro();
+function scrollD(){chat.scrollTop=chat.scrollHeight;}
+loadH();
+if(history.length===0)showIntro();
 </script>
 </body>
 </html>

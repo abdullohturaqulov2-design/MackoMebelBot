@@ -30,66 +30,121 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
 )
 
-# ── Gemini AI ─────────────────────────────────────────────────────────────────
+import os, json as _json, time, logging
+import urllib.request as _ur
+import urllib.error as _ue
+
 AI_SYSTEM = """Siz MackoMebelBot uchun Macko AI yordamchisisiz.
 Mebel, plita, akril, MDF, XDF, laminat, kromka haqida maslahat beradi.
 O'zbek, rus va ingliz tillarida gaplashadi. Qisqa va aniq javoblar beradi.
 Iltimos hech qanday chuqur uylamangda max 250 ta so'z va chiroyli stikerlar bilan foydalanuvchiga tushunarli javob bering
-Yana iltimos bitta javobni qayta qayta takrorlaab yubormang yana bir narsa ko'p uylamangda tez-tez va anniq javoblarni bering. Agarda foydalanuvchi rasm tashlasa va tahlil qilishni surasa rasm tashlash hajmini tushuntiring va qaytadan rasm tashlashini ayting hamda ko'p uylab utirmasdan srzu tahlil qilib javob bering yana sizga max rasm tahlil qilib javob berishingiz uchun 2 minutda tahlil qilib bulib javob berishiningiz kerak hamda foydalanuvchi boshqa narsa haqida malumot surasa siz ayting biz faqat mebellr haqida malumot bera olamiz deb keyin ayting mebeellar haqida yoki shu yuzasidan savollar bulsa bering deb"""
+Yana iltimos bitta javobni qayta qayta takrorlaab yubormang yana bir narsa ko'p uylamangda tez-tez va anniq javoblarni bering. 
+Agarda foydalanuvchi rasm tashlasa va tahlil qilishni surasa rasm tashlash hajmini tushuntiring va qaytadan rasm tashlashini ayting hamda ko'p 
+uylab utirmasdan srzu tahlil qilib javob bering yana sizga max rasm tahlil qilib javob berishingiz uchun 2 minutda tahlil qilib bulib javob 
+berishiningiz kerak hamda foydalanuvchi boshqa narsa haqida malumot surasa siz ayting biz faqat mebellr haqida malumot bera olamiz deb keyin 
+ayting mebellar haqida yoki shu yuzasidan savollar bulsa bering deb"""
 
-ENDPOINTS = [
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-preview-tts:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro-preview-tts:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-tts:generateContent",
-    "https://generativelanguage.googleapis.com/v1/models/gemma-4-26b-a4b-it:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent",
+# gemini-2.0-flash BIRINCHI — tez va o'ylamaydi!
+MODELS = [
+    {"url": "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300}},
+    {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300}},
+    # 2.5-flash — thinkingBudget:0 bilan (thinking o'chirilgan)
+    {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-preview-tts:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro-preview-tts:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-tts:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1/models/gemma-4-26b-a4b-it:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
+    {"url": "https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent",
+     "cfg": {"temperature": 1, "maxOutputTokens": 16300,
+             "thinkingConfig": {"thinkingBudget": 0}}},
 ]
 
 
+def _clean(text: str) -> str:
+    """AI fikrlash artifaktlarini olib tashlaydi (--- va ichki monolog)."""
+    lines = text.split('\n')
+    result, skip = [], False
+    for line in lines:
+        s = line.strip()
+        if s == '---':
+            skip = True; continue
+        if skip:
+            # Italik yoki "Wait," bilan boshlanadigan satrlar = ichki fikr
+            if s.startswith('*') or s.startswith('Wait') or s.startswith('Plan') \
+               or s.startswith('Response content') or s.startswith('Let\'s') \
+               or s.startswith('Drafting') or s.startswith('Resulting'):
+                continue
+            if s == '':
+                continue
+            skip = False
+        result.append(line)
+    return '\n'.join(result).strip() or text
+
+
 def _call_gemini(key: str, contents: list) -> str:
-    payload = _json.dumps({
-        "contents": contents,
-        "generationConfig": {"temperature": 1, "maxOutputTokens": 45000}
-    }).encode()
     headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     last_err = "Ulanmadi"
 
-    for url_base in ENDPOINTS:
-        url = f"{url_base}?key={key}"
+    for model in MODELS:
+        payload = _json.dumps({
+            "contents": contents,
+            "generationConfig": model["cfg"]
+        }).encode()
+        url = f"{model['url']}?key={key}"
+
         for attempt in range(1, 3):
             try:
                 req = _ur.Request(url, data=payload, headers=headers, method="POST")
                 with _ur.urlopen(req, timeout=6000) as resp:
                     result = _json.loads(resp.read().decode())
-                    text = result["candidates"][0]["content"]["parts"][0]["text"]
-                    logging.info(f"✅ Gemini: {url_base.split('models/')[1].split(':')[0]}")
+                    raw  = result["candidates"][0]["content"]["parts"][0]["text"]
+                    text = _clean(raw)
+                    name = model['url'].split('models/')[1].split(':')[0]
+                    logging.info(f"✅ {name}")
                     return text
             except _ue.HTTPError as e:
-                e.read()
+                body = e.read().decode("utf-8", errors="ignore")
                 if e.code == 404:
                     last_err = "404"; break
                 elif e.code == 429:
-                    if attempt < 2:
-                        time.sleep(15); continue
-                    # 429 bo'lsa keyingi modeldma sinash
+                    if attempt < 2: time.sleep(10); continue
                     last_err = "429"; break
+                elif e.code == 413:
+                    return "❌ Rasm juda katta. Kichikroq rasm yuboring (skrinshot)."
                 elif e.code in (401, 403):
-                    return "❌ API kalit noto'g'ri. GEMINI_API_KEY ni tekshiring."
+                    return "❌ API kalit noto'g'ri."
                 else:
-                    last_err = str(e.code); break
+                    last_err = f"{e.code}"; break
             except Exception as e:
                 last_err = str(e)[:50]; break
 
-    if "429" in last_err:
-        return "⏳ Gemini limiti tugdi. Biroz kuting va qayta yozing."
-    return f"❌ Xato: {last_err}. Qayta urinib ko'ring."
+    if "429" in str(last_err):
+        return "⏳ Limit tugdi. 1 daqiqadan so'ng qayta yozing."
+    return f"❌ Xato: {last_err}"
 
 
 async def handle_ai_chat(request):
@@ -107,20 +162,19 @@ async def handle_ai_chat(request):
         key = (os.environ.get("GEMINI_API_KEY") or
                os.environ.get("GOOGLE_API_KEY", "")).strip()
         if not key:
-            return web.json_response(
-                {"error": "GEMINI_API_KEY sozlanmagan!"}, headers=cors)
+            return web.json_response({"error": "GEMINI_API_KEY sozlanmagan!"}, headers=cors)
 
         contents = [
             {"role": "user",  "parts": [{"text": AI_SYSTEM}]},
             {"role": "model", "parts": [{"text": "Tushunarli! Yordam beraman."}]},
         ]
-        for h in hist[-10:]:
+        for h in hist[-6:]:  # Kam tarix — tezroq
             role = "model" if h.get("role") == "model" else "user"
-            contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
+            contents.append({"role": role, "parts": [{"text": h.get("content", "")[:500]}]})
 
         parts = []
         if message: parts.append({"text": message})
-        for img in images[:2]:
+        for img in images[:1]:  # Max 1 ta rasm
             parts.append({"inline_data": {
                 "mime_type": img.get("type", "image/jpeg"),
                 "data": img.get("data", "")
@@ -132,8 +186,11 @@ async def handle_ai_chat(request):
         return web.json_response({"response": text}, headers=cors)
 
     except Exception as e:
-        return web.json_response(
-            {"error": f"Server xato: {str(e)[:80]}"}, headers=cors)
+        err = str(e)
+        if "Too Large" in err or "413" in err:
+            return web.json_response(
+                {"error": "Rasm juda katta. Kichikroq rasm yuboring."}, headers=cors)
+        return web.json_response({"error": f"Xato: {err[:80]}"}, headers=cors)
 
 
 async def handle_cors(request):
@@ -143,9 +200,8 @@ async def handle_cors(request):
         "Access-Control-Allow-Headers": "Content-Type, x-goog-api-key",
     })
 
-
 async def start_web_server():
-    app = web.Application()
+    app = web.Application(client_max_size=5*1024*1024)  # 5MB max
     app.add_routes([
         web.get("/",            lambda r: web.Response(text="MackoMebelBot OK!")),
         web.post("/ai/chat",    handle_ai_chat),

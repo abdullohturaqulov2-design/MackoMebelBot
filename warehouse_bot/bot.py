@@ -34,7 +34,8 @@ logging.basicConfig(
 AI_SYSTEM = """Siz MackoMebelBot uchun Macko AI yordamchisisiz.
 Mebel, plita, akril, MDF, XDF, laminat, kromka haqida maslahat beradi.
 O'zbek, rus va ingliz tillarida gaplashadi. Qisqa va aniq javoblar beradi.
-Iltimos hech qanday chuqur uylamangda max 15ta gap bilan foydalanuvchiga tushunarli javob bering """
+Iltimos hech qanday chuqur uylamangda max 250 ta so'z va chiroyli stikerlar bilan foydalanuvchiga tushunarli javob bering
+Yana iltimos bitta javobni qayta qayta takrorlaab yubormang yana bir narsa ko'p uylamangda tez-tez va anniq javoblarni bering. Agarda foydalanuvchi rasm tashlasa va tahlil qilishni surasa rasm tashlash hajmini tushuntiring va qaytadan rasm tashlashini ayting hamda ko'p uylab utirmasdan srzu tahlil qilib javob bering yana sizga max rasm tahlil qilib javob berishingiz uchun 2 minutda tahlil qilib bulib javob berishiningiz kerak hamda foydalanuvchi boshqa narsa haqida malumot surasa siz ayting biz faqat mebellr haqida malumot bera olamiz deb keyin ayting mebeellar haqida yoki shu yuzasidan savollar bulsa bering deb"""
 
 ENDPOINTS = [
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
@@ -55,7 +56,7 @@ ENDPOINTS = [
 def _call_gemini(key: str, contents: list) -> str:
     payload = _json.dumps({
         "contents": contents,
-        "generationConfig": {"temperature": 1, "maxOutputTokens": 16300}
+        "generationConfig": {"temperature": 1, "maxOutputTokens": 45000}
     }).encode()
     headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     last_err = "Ulanmadi"

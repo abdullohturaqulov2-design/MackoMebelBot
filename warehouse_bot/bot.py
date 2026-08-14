@@ -64,12 +64,12 @@ Qoidalar (qat'iy):
 Siz faqat mebel, plita, akril, MDF, laminat, kromka va ombor ishlari bo'yicha yordam berasiz."""
 
 ENDPOINTS = [
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent",
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-preview-tts:generateContent",
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro-preview-tts:generateContent",

@@ -82,7 +82,7 @@ ENDPOINTS = [
 def _call_gemini(key: str, contents: list) -> str:
     payload = _json.dumps({
         "contents": contents,
-        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 45000}
+        "generationConfig": {"temperature": 1, "maxOutputTokens": 45000}
     }).encode()
     headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     last_err = "Ulanmadi"

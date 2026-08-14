@@ -52,7 +52,7 @@ textarea:focus{border-color:var(--blue)}
 </head>
 <body>
 <div class="header">
-  <div class="logo">🤖</div>
+  <div class="logo">🤷‍♂️</div>
   <div class="hinfo">
     <h3>Macko AI</h3>
     <p id="hst">Mebellar haqida · Tez javob</p>
@@ -65,7 +65,7 @@ textarea:focus{border-color:var(--blue)}
 <div class="input-area">
   <div class="prev" id="prev"></div>
   <div class="input-row">
-    <button class="img-btn" onclick="document.getElementById('fi').click()" title="Rasm yuklash">🖼</button>
+    <button class="img-btn" onclick="document.getElementById('fi').click()" title="Rasm yuklash">📷</button>
     <input type="file" id="fi" accept="image/*">
     <textarea id="inp" placeholder="Xabar yozing..." rows="1"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"
@@ -230,7 +230,7 @@ async function send(){
     addMsg('❌ '+e.message,'ai',now());
   }
   busy=false;sb.disabled=false;
-  document.getElementById('hst').textContent='Gemini AI · Tez javob';
+  document.getElementById('hst').textContent='Aniq va · Tez javob';
   scrollD();
 }
 

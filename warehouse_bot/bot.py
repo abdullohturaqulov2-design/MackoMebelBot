@@ -65,13 +65,14 @@ Siz faqat mebel, plita, akril, MDF, laminat, kromka va ombor ishlari bo'yicha yo
 
 MUHIM: Javobda hech qachon "User Question", "Role", "Constraints", "MDF (Medium Density...", inglizcha tahlil yoki o'zingizga gapirish bo'lmasin. Faqat to'g'ridan-to'g'ri o'zbekcha javob bering."""
 
+
 ENDPOINTS = [
+    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent",
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
-    "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent",
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-preview-tts:generateContent",
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent",
     "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro-preview-tts:generateContent",
@@ -83,17 +84,9 @@ ENDPOINTS = [
 
 def _call_gemini(key: str, contents: list) -> str:
     payload = _json.dumps({
-        "systemInstruction": {
-            "parts": [{"text": AI_SYSTEM}]
-        },
         "contents": contents,
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 1024,
-            "topP": 0.85
-        }
+        "generationConfig": {"temperature": 0.4, "maxOutputTokens": 4500}
     }).encode()
-
     headers = {"Content-Type": "application/json", "x-goog-api-key": key}
     last_err = "Ulanmadi"
 
@@ -102,7 +95,7 @@ def _call_gemini(key: str, contents: list) -> str:
         for attempt in range(1, 3):
             try:
                 req = _ur.Request(url, data=payload, headers=headers, method="POST")
-                with _ur.urlopen(req, timeout=120) as resp:  # 6000 emas, 60 qiling
+                with _ur.urlopen(req, timeout=600) as resp:
                     result = _json.loads(resp.read().decode())
                     text = result["candidates"][0]["content"]["parts"][0]["text"]
                     logging.info(f"✅ Gemini: {url_base.split('models/')[1].split(':')[0]}")
@@ -110,22 +103,18 @@ def _call_gemini(key: str, contents: list) -> str:
             except _ue.HTTPError as e:
                 e.read()
                 if e.code == 404:
-                    last_err = "404"
-                    break
+                    last_err = "404"; break
                 elif e.code == 429:
                     if attempt < 2:
-                        time.sleep(15)
-                        continue
-                    last_err = "429"
-                    break
+                        time.sleep(15); continue
+                    # 429 bo'lsa keyingi modeldma sinash
+                    last_err = "429"; break
                 elif e.code in (401, 403):
                     return "❌ API kalit noto'g'ri. GEMINI_API_KEY ni tekshiring."
                 else:
-                    last_err = str(e.code)
-                    break
+                    last_err = str(e.code); break
             except Exception as e:
-                last_err = str(e)[:50]
-                break
+                last_err = str(e)[:50]; break
 
     if "429" in last_err:
         return "⏳ Gemini limiti tugdi. Biroz kuting va qayta yozing."
@@ -150,28 +139,22 @@ async def handle_ai_chat(request):
             return web.json_response(
                 {"error": "GEMINI_API_KEY sozlanmagan!"}, headers=cors)
 
-        # System prompt endi systemInstruction orqali yuboriladi
-        contents = []
-
-        # Tarix (oxirgi 10 ta)
+        contents = [
+            {"role": "user",  "parts": [{"text": AI_SYSTEM}]},
+            {"role": "model", "parts": [{"text": "Tushunarli! Yordam beraman."}]},
+        ]
         for h in hist[-10:]:
             role = "model" if h.get("role") == "model" else "user"
             contents.append({"role": role, "parts": [{"text": h.get("content", "")}]})
 
-        # Hozirgi xabar + rasmlar
         parts = []
-        if message:
-            parts.append({"text": message})
+        if message: parts.append({"text": message})
         for img in images[:2]:
-            parts.append({
-                "inline_data": {
-                    "mime_type": img.get("type", "image/jpeg"),
-                    "data": img.get("data", "")
-                }
-            })
-        if not parts:
-            parts.append({"text": "Salom"})
-
+            parts.append({"inline_data": {
+                "mime_type": img.get("type", "image/jpeg"),
+                "data": img.get("data", "")
+            }})
+        if not parts: parts.append({"text": "Salom"})
         contents.append({"role": "user", "parts": parts})
 
         text = _call_gemini(key, contents)

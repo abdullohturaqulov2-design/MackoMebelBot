@@ -70,8 +70,8 @@ def init_db():
             admin_name    TEXT,
             created_at    TEXT NOT NULL
         );
-        "ALTER TABLE products ADD COLUMN discount_price REAL DEFAULT 0",
-        "ALTER TABLE subcategories ADD COLUMN parent_sub_slug TEXT DEFAULT NULL",
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS discount_price REAL DEFAULT 0;
+        ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS parent_sub_slug TEXT DEFAULT NULL;
     """)
     conn.commit()
     from config import DEFAULT_CATEGORIES, DEFAULT_SUBCATEGORIES

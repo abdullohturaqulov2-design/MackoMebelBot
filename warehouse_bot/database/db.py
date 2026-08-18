@@ -70,6 +70,8 @@ def init_db():
             admin_name    TEXT,
             created_at    TEXT NOT NULL
         );
+        "ALTER TABLE products ADD COLUMN discount_price REAL DEFAULT 0",
+        "ALTER TABLE subcategories ADD COLUMN parent_sub_slug TEXT DEFAULT NULL",
     """)
     conn.commit()
     from config import DEFAULT_CATEGORIES, DEFAULT_SUBCATEGORIES
@@ -424,3 +426,79 @@ def get_day_summary(date_str):
 def row_to_dict(row):
     if isinstance(row, dict): return row
     return dict(row)
+
+
+
+def set_discount(product_id: int, discount_price: float):
+    conn = get_conn(); c = conn.cursor()
+    c.execute("UPDATE products SET discount_price=? WHERE id=?",
+              (discount_price, product_id))
+    conn.commit(); conn.close()
+
+def remove_discount(product_id: int):
+    conn = get_conn(); c = conn.cursor()
+    c.execute("UPDATE products SET discount_price=0 WHERE id=?", (product_id,))
+    conn.commit(); conn.close()
+
+# ─── PRODUCT EDIT ─────────────────────────────────────────────────────────────
+def update_product_field(product_id: int, field: str, value):
+    """Mahsulotning bitta maydonini yangilaydi."""
+    ALLOWED = {"name","code","format_size","thickness","price","quantity",
+               "min_quantity","location","category","subcategory"}
+    if field not in ALLOWED: return False
+    conn = get_conn(); c = conn.cursor()
+    c.execute(f"UPDATE products SET {field}=? WHERE id=?", (value, product_id))
+    conn.commit(); conn.close(); return True
+
+# ─── NESTED SUBCATEGORIES ─────────────────────────────────────────────────────
+def get_sub_subcategories(cat_slug: str, sub_slug: str):
+    """Subkategoriya ichidagi subkategoriyalar (3-daraja)."""
+    conn = get_conn(); c = conn.cursor()
+    c.execute("""SELECT * FROM subcategories
+                 WHERE category_slug=? AND parent_sub_slug=?
+                 ORDER BY id""", (cat_slug, sub_slug))
+    rows = c.fetchall(); conn.close(); return rows
+
+def add_sub_subcategory(cat_slug: str, parent_sub_slug: str,
+                         slug: str, uz: str, ru: str, en: str):
+    """3-daraja subkategoriya qo'shish."""
+    conn = get_conn(); c = conn.cursor()
+    c.execute("""INSERT INTO subcategories
+                 (category_slug,slug,name_uz,name_ru,name_en,parent_sub_slug)
+                 VALUES(?,?,?,?,?,?)""",
+              (cat_slug, slug, uz, ru, en, parent_sub_slug))
+    nid = c.lastrowid; conn.commit(); conn.close(); return nid
+
+# ─── CATEGORY EXCEL ───────────────────────────────────────────────────────────
+def upsert_category_from_excel(slug, uz, ru, en):
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT id FROM categories WHERE slug=?", (slug,))
+    if c.fetchone():
+        c.execute("UPDATE categories SET name_uz=?,name_ru=?,name_en=? WHERE slug=?",
+                  (uz, ru, en, slug))
+        conn.commit(); conn.close(); return "updated"
+    from datetime import datetime
+    c.execute("INSERT INTO categories(slug,name_uz,name_ru,name_en,created_at) VALUES(?,?,?,?,?)",
+              (slug, uz, ru, en, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    conn.commit(); conn.close(); return "added"
+
+def upsert_subcategory_from_excel(cat_slug, slug, uz, ru, en):
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT id FROM subcategories WHERE category_slug=? AND slug=?",
+              (cat_slug, slug))
+    if c.fetchone():
+        c.execute("""UPDATE subcategories SET name_uz=?,name_ru=?,name_en=?
+                     WHERE category_slug=? AND slug=?""",
+                  (uz, ru, en, cat_slug, slug))
+        conn.commit(); conn.close(); return "updated"
+    c.execute("""INSERT INTO subcategories(category_slug,slug,name_uz,name_ru,name_en)
+                 VALUES(?,?,?,?,?)""", (cat_slug, slug, uz, ru, en))
+    conn.commit(); conn.close(); return "added"
+
+def delete_category_by_slug(slug: str) -> bool:
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM products WHERE category=?", (slug,))
+    if c.fetchone()[0] > 0: conn.close(); return False
+    c.execute("DELETE FROM subcategories WHERE category_slug=?", (slug,))
+    c.execute("DELETE FROM categories WHERE slug=?", (slug,))
+    conn.commit(); conn.close(); return True

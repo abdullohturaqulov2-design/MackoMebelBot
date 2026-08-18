@@ -189,7 +189,7 @@ async function send(){
 
   const t=now();
   let content=text;
-  if(imgs.length>0)content=(text?text+'\n':'')+'🖼 Rasm yuborildi';
+  if(imgs.length>0)content=(text?text+'\n':'')+'📸 Rasm yuborildi';
   addMsg(content,'user',t);
 
   const curImgs=[...imgs];
@@ -202,7 +202,7 @@ async function send(){
   typ.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
   chat.appendChild(typ);scrollD();
   busy=true;sb.disabled=true;
-  document.getElementById('hst').textContent='Javob tayyorlanmoqda iltimos ozroq sabr qiling...';
+  document.getElementById('hst').textContent='🔔 Javob tayyorlanmoqda iltimos ozroq sabr qiling...';
 
   try{
     if(!BOT)throw new Error('BOT_URL sozlanmagan. Render da BOT_URL ni qo\'shing.');

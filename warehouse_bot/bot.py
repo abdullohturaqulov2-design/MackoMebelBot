@@ -18,7 +18,7 @@ from handlers import (start, language, menu, categories, admin_mgr,
                       add_products, delete_products, stats, movement,
                       warehouse, lists, search, photo_upload, history,
                       manual_add, manual_delete, scanner, qr_handler,
-                      macko_ai_handler, excel_export)
+                      macko_ai_handler, excel_export, product_edit)
 from config import BOT_TOKEN, DATA_DIR
 from database.db import init_db
 from utils.image_utils import ensure_no_image_placeholder
@@ -62,6 +62,8 @@ Qoidalar (qat'iy):
 - Bo'sh javob yoki "---" hech qachon yubormang.
 
 Siz faqat mebel, plita, akril, MDF, laminat, kromka va ombor ishlari bo'yicha yordam berasiz.
+Unutma: Siz savolga javob berguncha fikrlash, reja, "Wait", "Plan", "Drafting", "Let's correct" kabi narsalarni ham yozib chiqarib yuboryabsiz unday qilmang
+Yoki fikrlash, reja, "Wait", "Plan", "Drafting", "Let's correct" kabi narsalarni ham chiqarib yuborsangiz bularni va javobni alhida qilib ajralib turadigan qiling yani thinking deb o'zizi chiqargan fikrlash, reja, "Wait", "Plan", "Drafting", "Let's correct" kabi narsalarni javob deb foydalanuvchini savoliga javobni chiqaring chiroyli qilib
 
 MUHIM: Javobda hech qachon "User Question", "Role", "Constraints", "MDF (Medium Density...", inglizcha tahlil yoki o'zingizga gapirish bo'lmasin. Faqat to'g'ridan-to'g'ri o'zbekcha javob bering."""
 
@@ -219,6 +221,7 @@ async def main():
     dp.include_router(manual_delete.router)
     dp.include_router(add_products.router)
     dp.include_router(delete_products.router)
+    dp.include_router(product_edit.router)
     dp.include_router(warehouse.router)
     dp.include_router(qr_handler.router)
     dp.include_router(scanner.router)

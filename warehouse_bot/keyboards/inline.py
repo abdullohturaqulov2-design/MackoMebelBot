@@ -74,8 +74,6 @@ def product_detail_back_keyboard(lang, back_cb):
 
 
 def product_detail_admin_keyboard(lang, prod_id, back_cb, has_photo=False, has_qr=False):
-    from aiogram.utils.keyboard import InlineKeyboardBuilder
-    from aiogram.types import InlineKeyboardButton
     b = InlineKeyboardBuilder()
     b.button(text=t(lang,"btn_mv_in"),   callback_data=f"mvf:IN:{prod_id}")
     b.button(text=t(lang,"btn_mv_out"),  callback_data=f"mvf:OUT:{prod_id}")
@@ -84,16 +82,21 @@ def product_detail_admin_keyboard(lang, prod_id, back_cb, has_photo=False, has_q
     b.adjust(2)
     if has_photo:
         b.row(InlineKeyboardButton(text=t(lang,"btn_remove_photo"),
-                                   callback_data=f"photo:del:{prod_id}"))
+              callback_data=f"photo:del:{prod_id}"))
     b.row(InlineKeyboardButton(text=t(lang,"btn_upload_photo"),
-                               callback_data=f"photo:up:{prod_id}"))
-    # QR tugmasi — faqat QR yo'q bo'lsa
+          callback_data=f"photo:up:{prod_id}"))
     if not has_qr:
         b.row(InlineKeyboardButton(text="📦 QR code berish",
-                                   callback_data=f"qr:gen:{prod_id}"))
+              callback_data=f"qr:gen:{prod_id}"))
+    b.row(
+        InlineKeyboardButton(text="✏️ Tahrirlash",
+              callback_data=f"prod_edit:{prod_id}:{back_cb}"),
+        InlineKeyboardButton(text="🏷 Skidka",
+              callback_data=f"pedit:{prod_id}:discount"),
+    )
     b.row(InlineKeyboardButton(text=t(lang,"btn_del_product"),
-                               callback_data=f"delprod:ask:{prod_id}"))
-    b.row(InlineKeyboardButton(text=t(lang,"btn_back"),  callback_data=back_cb),
+          callback_data=f"delprod:ask:{prod_id}"))
+    b.row(InlineKeyboardButton(text=t(lang,"btn_back"), callback_data=back_cb),
           InlineKeyboardButton(text=t(lang,"btn_to_main"), callback_data="to_main"))
     return b.as_markup()
 

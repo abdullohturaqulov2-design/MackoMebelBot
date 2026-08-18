@@ -9,6 +9,7 @@ class AdminStates(StatesGroup):
     waiting_admin_id  = State()       # ← QO'SHING
     waiting_excel_add    = State()
     waiting_excel_remove = State()
+    editing_product = State()
 
 class CategoryStates(StatesGroup):
     # Kategoriya qo'shish

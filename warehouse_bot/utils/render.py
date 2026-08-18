@@ -22,15 +22,27 @@ def _qty_str(qty, min_qty):
 def format_detail(lang, prod):
     cat    = prod["category"] or ""
     subcat = prod["subcategory"] or ""
-    keys   = prod.keys() if hasattr(prod, "keys") else prod.keys()
+    keys   = prod.keys()
     min_q  = prod["min_quantity"] if "min_quantity" in keys else 0
     price  = prod["price"] if "price" in keys else 0
-    price_str = f"{int(price):,}".replace(",", " ") if price else "-"
+    disc   = prod["discount_price"] if "discount_price" in keys else 0
+
+    # Narx ko'rinishi
+    if disc and float(disc) > 0 and float(disc) < float(price or 0):
+        price_str = (f"<s>{int(price):,}</s> → "
+                     f"<b>{int(disc):,} so'm</b> 🏷 Skidka!")
+    elif price:
+        price_str = f"{int(price):,} so'm"
+    else:
+        price_str = "-"
+
+    price_str = price_str.replace(",", " ")
+
     return t(lang, "product_detail",
         name        = prod["name"],
         code        = prod["code"] or "-",
         category    = db.get_category_label(lang, cat),
-        subcategory = db.get_subcategory_label(lang, cat, subcat),
+        subcategory = db.get_subcategory_label(lang, cat, subcat) or "-",
         format_size = prod["format_size"] or "-",
         thickness   = prod["thickness"] or "-",
         price       = price_str,
@@ -38,6 +50,7 @@ def format_detail(lang, prod):
         location    = prod["location"] or "-",
         added_at    = prod["added_at"],
     )
+
 
 
 async def delete_msg(message):

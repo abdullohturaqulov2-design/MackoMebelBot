@@ -72,7 +72,7 @@ def init_db():
         );
         ALTER TABLE products ADD COLUMN IF NOT EXISTS discount_price REAL DEFAULT 0;
         ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS parent_sub_slug TEXT DEFAULT NULL;
-        ALTER TABLE subcategories ADD COLUMN parent_id INTEGER DEFAULT NULL;
+        ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS parent_id INTEGER DEFAULT NULL;
     """)
     conn.commit()
     from config import DEFAULT_CATEGORIES, DEFAULT_SUBCATEGORIES

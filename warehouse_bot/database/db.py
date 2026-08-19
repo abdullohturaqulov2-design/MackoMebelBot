@@ -72,6 +72,7 @@ def init_db():
         );
         ALTER TABLE products ADD COLUMN IF NOT EXISTS discount_price REAL DEFAULT 0;
         ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS parent_sub_slug TEXT DEFAULT NULL;
+        ALTER TABLE subcategories ADD COLUMN parent_id INTEGER DEFAULT NULL;
     """)
     conn.commit()
     from config import DEFAULT_CATEGORIES, DEFAULT_SUBCATEGORIES
@@ -502,3 +503,62 @@ def delete_category_by_slug(slug: str) -> bool:
     c.execute("DELETE FROM subcategories WHERE category_slug=?", (slug,))
     c.execute("DELETE FROM categories WHERE slug=?", (slug,))
     conn.commit(); conn.close(); return True
+
+
+def get_children(cat_slug: str, parent_id=None):
+    """
+    Kategoriya ichidagi bolalar subcategorylarni qaytaradi.
+    parent_id=None → to'g'ridan cat_slug bolalari
+    parent_id=N    → o'sha subcategoryning bolalari
+    """
+    conn = get_conn(); c = conn.cursor()
+    if parent_id is None:
+        c.execute("""SELECT * FROM subcategories
+                     WHERE category_slug=? AND (parent_id IS NULL OR parent_id=0)
+                     ORDER BY id""", (cat_slug,))
+    else:
+        c.execute("""SELECT * FROM subcategories
+                     WHERE category_slug=? AND parent_id=?
+                     ORDER BY id""", (cat_slug, parent_id))
+    rows = c.fetchall(); conn.close(); return rows
+
+
+def has_children(sub_id: int) -> bool:
+    """Subcategoryda bola bormi?"""
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM subcategories WHERE parent_id=?", (sub_id,))
+    n = c.fetchone()[0]; conn.close(); return n > 0
+
+
+def add_nested_sub(cat_slug: str, parent_id: int, slug: str, uz: str):
+    """Ichma-ich subkategoriya qo'shish."""
+    conn = get_conn(); c = conn.cursor()
+    c.execute("""INSERT INTO subcategories
+                 (category_slug, slug, name_uz, name_ru, name_en, parent_id)
+                 VALUES(?,?,?,?,?,?)""",
+              (cat_slug, slug, uz, uz, uz, parent_id))
+    nid = c.lastrowid; conn.commit(); conn.close(); return nid
+
+
+def get_sub_path(sub_id: int) -> list:
+    """Subkategoriyadan rootgacha yo'lni qaytaradi (breadcrumb uchun)."""
+    conn = get_conn(); c = conn.cursor(); path = []
+    current_id = sub_id
+    for _ in range(10):  # max 10 daraja
+        c.execute("SELECT * FROM subcategories WHERE id=?", (current_id,))
+        row = c.fetchone()
+        if not row: break
+        path.insert(0, row)
+        if not row["parent_id"]:
+            break
+        current_id = row["parent_id"]
+    conn.close(); return path
+
+
+def count_products_in_sub(sub_id: int) -> int:
+    """Subcategory va uning bolalarida nechta mahsulot."""
+    conn = get_conn(); c = conn.cursor()
+    c.execute("SELECT slug, category_slug FROM subcategories WHERE id=?", (sub_id,))
+    row = c.fetchone(); conn.close()
+    if not row: return 0
+    return count_products_in_subcategory(row["category_slug"], row["slug"])

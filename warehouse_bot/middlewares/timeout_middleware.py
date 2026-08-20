@@ -10,7 +10,7 @@ from aiogram.types import Message, CallbackQuery
 logger = logging.getLogger(__name__)
 
 class TimeoutMiddleware(BaseMiddleware):
-    def __init__(self, timeout: float = 4.5):
+    def __init__(self, timeout: float = 10):
         self.timeout = timeout
 
     async def __call__(self, handler, event, data):

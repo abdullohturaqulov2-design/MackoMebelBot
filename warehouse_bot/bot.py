@@ -210,8 +210,8 @@ async def main():
 
     dp.message.middleware(AutoInitMiddleware())
     dp.callback_query.middleware(AutoInitMiddleware())
-    dp.message.middleware(TimeoutMiddleware(10))
-    dp.callback_query.middleware(TimeoutMiddleware(10))
+    dp.message.middleware(TimeoutMiddleware(120))
+    dp.callback_query.middleware(TimeoutMiddleware(120))
 
     dp.include_router(start.router)
     dp.include_router(language.router)

@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
-Mahsulotni tahrirlash va skidka berish.
-"""
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import InlineKeyboardButton
 from database import db
 from locales.texts import t
 from states.states import AdminStates
@@ -15,18 +13,18 @@ from utils.render import send_product_detail, safe_edit_or_send, delete_msg
 router = Router()
 
 
-def _edit_menu_kb(lang, prod_id, back_cb):
+def _edit_kb(lang, prod_id, back_cb):
     b = InlineKeyboardBuilder()
     fields = [
-        ("📦 Nomi",         f"pedit:{prod_id}:name"),
-        ("🔢 Kodi",         f"pedit:{prod_id}:code"),
-        ("📐 Format",        f"pedit:{prod_id}:format_size"),
-        ("📏 Qalinlik",      f"pedit:{prod_id}:thickness"),
-        ("💰 Narx",         f"pedit:{prod_id}:price"),
-        ("📊 Miqdor",       f"pedit:{prod_id}:quantity"),
-        ("📍 Joylashuv",    f"pedit:{prod_id}:location"),
-        ("🏷 Skidka",       f"pedit:{prod_id}:discount"),
-        ("❌ Skidkani bekor", f"pedit:{prod_id}:nodiscount"),
+        ("📦 Nomi",      f"pe:{prod_id}:name:{back_cb}"),
+        ("🔢 Kodi",      f"pe:{prod_id}:code:{back_cb}"),
+        ("📐 Format",    f"pe:{prod_id}:format_size:{back_cb}"),
+        ("📏 Qalinlik",  f"pe:{prod_id}:thickness:{back_cb}"),
+        ("💰 Narx",      f"pe:{prod_id}:price:{back_cb}"),
+        ("📊 Miqdor",    f"pe:{prod_id}:quantity:{back_cb}"),
+        ("📍 Joylashuv", f"pe:{prod_id}:location:{back_cb}"),
+        ("🏷 Skidka",    f"pe:{prod_id}:discount:{back_cb}"),
+        ("❌ Skidka bekor", f"pe:{prod_id}:nodiscount:{back_cb}"),
     ]
     for label, cb in fields:
         b.button(text=label, callback_data=cb)
@@ -36,69 +34,61 @@ def _edit_menu_kb(lang, prod_id, back_cb):
 
 
 @router.callback_query(F.data.startswith("prod_edit:"))
-async def cb_prod_edit_start(callback: CallbackQuery, state: FSMContext):
-    if not is_admin(callback.from_user.id): await callback.answer(); return
-    lang    = db.get_user_lang(callback.from_user.id)
-    pid     = int(callback.data.split(":")[1])
-    back_cb = callback.data.split(":")[2] if len(callback.data.split(":")) > 2 else "catshow"
-    prod    = db.get_product(pid)
-    if not prod: await callback.answer("Topilmadi", show_alert=True); return
-    await state.update_data(editing_prod_id=pid, editing_back_cb=back_cb)
+async def cb_edit_start(callback: CallbackQuery, state: FSMContext):
+    if not is_admin(callback.from_user.id):
+        await callback.answer(); return
+    lang  = db.get_user_lang(callback.from_user.id)
+    parts = callback.data.split(":", 2)
+    pid   = int(parts[1])
+    back  = parts[2] if len(parts) > 2 else "catshow"
+    prod  = db.get_product(pid)
+    if not prod:
+        await callback.answer("Topilmadi", show_alert=True); return
+    await state.update_data(ep_id=pid, ep_back=back)
     await safe_edit_or_send(
         callback,
-        f"✏️ <b>Tahrirlash:</b> {prod['name']}\n\nQaysi maydonni o'zgartirasiz?",
-        _edit_menu_kb(lang, pid, back_cb)
-    )
+        f"✏️ <b>Tahrirlash:</b> {prod['name']}\n\nQaysi maydonni o'zgartirmoqchisiz?",
+        _edit_kb(lang, pid, back))
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("pedit:"))
-async def cb_pedit_field(callback: CallbackQuery, state: FSMContext):
-    if not is_admin(callback.from_user.id): await callback.answer(); return
+@router.callback_query(F.data.startswith("pe:"))
+async def cb_edit_field(callback: CallbackQuery, state: FSMContext):
+    if not is_admin(callback.from_user.id):
+        await callback.answer(); return
     lang  = db.get_user_lang(callback.from_user.id)
-    parts = callback.data.split(":")
+    parts = callback.data.split(":", 3)
     pid   = int(parts[1])
     field = parts[2]
+    back  = parts[3] if len(parts) > 3 else "catshow"
+    prod  = db.get_product(pid)
+    if not prod:
+        await callback.answer(); return
 
     if field == "nodiscount":
-        db.remove_discount(pid)
-        prod = db.get_product(pid)
-        data = await state.get_data()
-        back = data.get("editing_back_cb","catshow")
+        db.set_discount(pid, 0)
         await delete_msg(callback.message)
         await send_product_detail(callback, lang, prod, back, admin=True)
         await callback.answer("✅ Skidka bekor qilindi", show_alert=True)
         return
 
     labels = {
-        "name": "📦 Yangi nomini yozing:",
-        "code": "🔢 Yangi kodini yozing:",
-        "format_size": "📐 Yangi formatni yozing (masalan 2800*2070):",
-        "thickness": "📏 Yangi qalinlikni yozing (masalan 18mm):",
-        "price": "💰 Yangi narxni yozing (so'm):",
-        "quantity": "📊 Yangi miqdorni yozing:",
-        "location": "📍 Yangi joylashuvni yozing:",
-        "discount": "🏷 Skidka narxini yozing (so'm):\n\nMisol: 450000 → 375000",
+        "name":        f"📦 Nomi (hozir: <code>{prod['name']}</code>)",
+        "code":        f"🔢 Kodi (hozir: <code>{prod['code'] or '-'}</code>)",
+        "format_size": f"📐 Format (hozir: <code>{prod['format_size'] or '-'}</code>)",
+        "thickness":   f"📏 Qalinlik (hozir: <code>{prod['thickness'] or '-'}</code>)",
+        "price":       f"💰 Narx (hozir: <code>{int(prod['price'] or 0):,}</code> so'm)",
+        "quantity":    f"📊 Miqdor (hozir: <code>{int(prod['quantity'] or 0)}</code>)",
+        "location":    f"📍 Joylashuv (hozir: <code>{prod['location'] or '-'}</code>)",
+        "discount":    f"🏷 Skidka narxi (hozir: <code>{int(prod.get('discount_price') or 0):,}</code> so'm)\n\n"
+                       f"Misol: asosiy narx 450000 bo'lsa, skidka narxi 375000 kiriting",
     }
 
-    prod = db.get_product(pid)
-    if not prod: await callback.answer(); return
-
-    current_vals = {
-        "name": prod["name"], "code": prod["code"] or "-",
-        "format_size": prod["format_size"] or "-", "thickness": prod["thickness"] or "-",
-        "price": str(int(prod["price"] or 0)), "quantity": str(int(prod["quantity"] or 0)),
-        "location": prod["location"] or "-",
-        "discount": str(int(prod.get("discount_price") or 0)),
-    }
-
-    await state.update_data(editing_field=field, editing_prod_id=pid)
+    await state.update_data(ep_id=pid, ep_field=field, ep_back=back)
     await state.set_state(AdminStates.editing_product)
     await callback.message.answer(
-        f"<b>Hozirgi qiymat:</b> <code>{current_vals.get(field,'-')}</code>\n\n"
-        f"{labels.get(field,'Yangi qiymat:')}",
-        parse_mode="HTML"
-    )
+        f"✏️ <b>Yangi qiymat kiriting:</b>\n\n{labels.get(field,'Yangi qiymat:')}",
+        parse_mode="HTML")
     await callback.answer()
 
 
@@ -106,34 +96,37 @@ async def cb_pedit_field(callback: CallbackQuery, state: FSMContext):
 async def got_edit_value(message: Message, state: FSMContext):
     lang = db.get_user_lang(message.from_user.id)
     data = await state.get_data()
-    pid  = data.get("editing_prod_id")
-    field= data.get("editing_field")
-    back = data.get("editing_back_cb","catshow")
-    val  = message.text.strip()
+    pid   = data.get("ep_id")
+    field = data.get("ep_field")
+    back  = data.get("ep_back", "catshow")
+    val   = message.text.strip()
 
+    if not pid or not field:
+        await state.set_state(AdminStates.main_menu)
+        return
+
+    # Validatsiya
+    if field in ("price", "quantity", "min_quantity", "discount"):
+        try:
+            val = float(val.replace(" ", "").replace(",", "."))
+            if val < 0: raise ValueError
+        except ValueError:
+            await message.answer("⚠️ Son kiriting (musbat):"); return
+
+    # Saqlash
     if field == "discount":
-        try:
-            discount = float(val.replace(" ","").replace(",","."))
-            db.set_discount(pid, discount)
-            await message.answer(
-                f"✅ Skidka belgilandi!\n"
-                f"💰 Narx: <s>{int(db.get_product(pid)['price'] or 0):,}</s> → "
-                f"<b>{int(discount):,} so'm</b> 🏷",
-                parse_mode="HTML"
-            )
-        except ValueError:
-            await message.answer("⚠️ Noto'g'ri narx. Son kiriting:"); return
-    elif field in ("price","quantity","min_quantity"):
-        try:
-            num = float(val.replace(" ","").replace(",","."))
-            db.update_product_field(pid, field, num)
-            await message.answer(f"✅ {field} yangilandi: <b>{num}</b>", parse_mode="HTML")
-        except ValueError:
-            await message.answer("⚠️ Son kiriting:"); return
+        db.set_discount(pid, val)
+        prod = db.get_product(pid)
+        p_str = f"{int(prod['price'] or 0):,}".replace(",", " ")
+        d_str = f"{int(val):,}".replace(",", " ")
+        await message.answer(
+            f"✅ Skidka belgilandi!\n"
+            f"💰 <s>{p_str}</s> → <b>{d_str} so'm</b> 🏷",
+            parse_mode="HTML")
     else:
         db.update_product_field(pid, field, val)
-        await message.answer(f"✅ Yangilandi: <b>{val}</b>", parse_mode="HTML")
+        await message.answer(f"✅ Yangilandi!", parse_mode="HTML")
 
-    prod = db.get_product(pid)
     await state.set_state(AdminStates.main_menu)
+    prod = db.get_product(pid)
     await send_product_detail(message, lang, prod, back, admin=True)

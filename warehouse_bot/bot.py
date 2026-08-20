@@ -18,12 +18,13 @@ from handlers import (start, language, menu, categories, admin_mgr,
                       add_products, delete_products, stats, movement,
                       warehouse, lists, search, photo_upload, history,
                       manual_add, manual_delete, scanner, qr_handler,
-                      macko_ai_handler, excel_export, product_edit)
+                      macko_ai_handler, excel_export, product_edit, category_excel)
 from config import BOT_TOKEN, DATA_DIR
 from database.db import init_db
 from utils.image_utils import ensure_no_image_placeholder
 from utils.qr_utils import init_qr_dir
 from middlewares.auto_init import AutoInitMiddleware
+from middlewares.timeout_middleware import TimeoutMiddleware
 
 logging.basicConfig(
     level=logging.INFO,
@@ -209,6 +210,8 @@ async def main():
 
     dp.message.middleware(AutoInitMiddleware())
     dp.callback_query.middleware(AutoInitMiddleware())
+    dp.message.(TimeoutMiddleware(4.5))
+    dp.callback_query.middleware(TimeoutMiddleware(4.5))
 
     dp.include_router(start.router)
     dp.include_router(language.router)
@@ -222,6 +225,7 @@ async def main():
     dp.include_router(add_products.router)
     dp.include_router(delete_products.router)
     dp.include_router(product_edit.router)
+    dp.include_router(category_excel.router)
     dp.include_router(warehouse.router)
     dp.include_router(qr_handler.router)
     dp.include_router(scanner.router)

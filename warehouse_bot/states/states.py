@@ -10,6 +10,7 @@ class AdminStates(StatesGroup):
     waiting_excel_add    = State()
     waiting_excel_remove = State()
     editing_product = State()
+    cat_excel       = State()
 
 class CategoryStates(StatesGroup):
     # Kategoriya qo'shish
